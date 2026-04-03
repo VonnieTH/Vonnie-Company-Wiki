@@ -1,34 +1,132 @@
+// ============================================================
+//  DATA
+// ============================================================
 var SOCIALS = [
-  { name:"Vonnie_Channel",  color:"var(--cyan)",     handle:"YouTube",  icon:"fa-brands fa-youtube",   url:"https://www.youtube.com/@Vonnie_Channel"    },
+  { name:"Vonnie_Channel",  color:"#FF0000",         handle:"YouTube",  icon:"fa-brands fa-youtube",   url:"https://www.youtube.com/@Vonnie_Channel"    },
   { name:"Vonnie Studio",   color:"var(--purple)",   handle:"Discord",  icon:"fa-brands fa-discord",   url:"https://discord.gg/fntGjBaVZ4"              },
   { name:"NoBuy1926",       color:"#FF4500",         handle:"Reddit",   icon:"fa-brands fa-reddit",    url:"https://www.reddit.com/user/NoBuy1926/"     },
   { name:"Vonnie_GamingTH", color:"var(--text-main)",handle:"X",        icon:"fa-brands fa-x-twitter", url:"https://x.com/Vonnie_GamingTH"              }
 ];
-var grid = document.getElementById("social-grid");
-SOCIALS.forEach(function(s) {
-  var div = document.createElement('div');
-  div.className = 'social-row';
-  div.style.cursor = 'pointer';
-  div.dataset.url  = s.url;
-  div.dataset.name = s.handle;
-  div.addEventListener('click', function(){ openLink(this.dataset.url, this.dataset.name); });
-  div.innerHTML = '<div class="social-icon"><i class="' + s.icon + '" style="font-size:14px;color:' + s.color + '"></i></div>'
-    + '<span class="social-name">' + s.name + '</span>'
-    + '<span class="social-handle">' + s.handle + '</span>';
-  grid.appendChild(div);
-});
 
+var SKILLS = [
+  { name:"Web Development",  level:70, color:"var(--cyan)"   },
+  { name:"Python",           level:60, color:"var(--cyan)"   },
+  { name:"Machine Learning", level:40, color:"var(--gold)"   },
+  { name:"UI/UX Design",     level:65, color:"var(--purple)" },
+  { name:"Security",         level:35, color:"var(--green)"  }
+];
+
+var SEARCH_INDEX = [
+  { title:"Home",         page:"home",     desc:"Welcome screen, stats, featured project, activity log" },
+  { title:"About Me",     page:"about",    desc:"Profile, skills, education, interests" },
+  { title:"Projects",     page:"projects", desc:"VonnieStudio Wiki, tech stack, WIP projects" },
+  { title:"Contact",      page:"contact",  desc:"Social channels, availability, timezone" },
+  { title:"YouTube",      page:"home",     desc:"Vonnie_Channel on YouTube" },
+  { title:"Discord",      page:"home",     desc:"Vonnie Studio Discord server" },
+  { title:"Reddit",       page:"home",     desc:"NoBuy1926 on Reddit" },
+  { title:"X / Twitter",  page:"home",     desc:"Vonnie_GamingTH on X" },
+  { title:"Machine Learning", page:"about",desc:"ML skill, Python, AI models" },
+  { title:"Security",     page:"about",    desc:"Cybersecurity focus area" }
+];
+
+// ============================================================
+//  PAGE ROUTING
+// ============================================================
+var currentPage = 'home';
+
+function navigate(page) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(function(el) {
+    el.classList.add('hidden');
+  });
+  // Show target
+  var target = document.getElementById('page-' + page);
+  if (target) {
+    target.classList.remove('hidden');
+    // Re-trigger card animations
+    target.querySelectorAll('.wiki-card, .stats-row, .wiki-banner, .proj-filter-row').forEach(function(el) {
+      el.style.animation = 'none';
+      el.offsetHeight; // reflow
+      el.style.animation = '';
+    });
+  }
+  // Update drawer active state
+  document.querySelectorAll('.drawer-link').forEach(function(a) {
+    a.classList.toggle('active', a.dataset.page === page);
+  });
+  // Update page title
+  var titles = { home:'HOME', about:'ABOUT_ME', projects:'PROJECTS', contact:'CONTACT' };
+  var titleEl = target && target.querySelector('.page-title');
+  if (titleEl) titleEl.textContent = '// ' + (titles[page] || page.toUpperCase());
+
+  currentPage = page;
+  window.scrollTo(0, 0);
+
+  // Page-specific inits
+  if (page === 'about') initSkillBars();
+  if (page === 'contact') buildContactSocials();
+}
+
+// ============================================================
+//  SOCIALS BUILD
+// ============================================================
+function buildSocialGrid(containerId) {
+  var grid = document.getElementById(containerId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  SOCIALS.forEach(function(s) {
+    var div = document.createElement('div');
+    div.className = 'social-row';
+    div.style.cursor = 'pointer';
+    div.dataset.url  = s.url;
+    div.dataset.name = s.handle;
+    div.addEventListener('click', function(){ openLink(this.dataset.url, this.dataset.name); });
+    div.innerHTML =
+      '<div class="social-icon"><i class="' + s.icon + '" style="font-size:14px;color:' + s.color + '"></i></div>' +
+      '<span class="social-name">' + s.name + '</span>' +
+      '<span class="social-handle">' + s.handle + '</span>';
+    grid.appendChild(div);
+  });
+}
+
+function buildContactSocials() {
+  var grid = document.getElementById('contact-social-grid');
+  if (!grid || grid.dataset.built) return;
+  grid.dataset.built = '1';
+  grid.style.display = 'flex';
+  grid.style.flexDirection = 'column';
+  SOCIALS.forEach(function(s) {
+    var div = document.createElement('div');
+    div.className = 'social-row contact-social-row';
+    div.style.cursor = 'pointer';
+    div.addEventListener('click', function(){ openLink(s.url, s.handle); });
+    div.innerHTML =
+      '<div class="social-icon"><i class="' + s.icon + '" style="font-size:16px;color:' + s.color + '"></i></div>' +
+      '<div style="flex:1;">' +
+        '<div class="social-name">' + s.name + '</div>' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:1px;">' + s.url + '</div>' +
+      '</div>' +
+      '<span class="social-handle">' + s.handle + '</span>';
+    grid.appendChild(div);
+  });
+}
+
+// ============================================================
+//  LINK MODAL
+// ============================================================
 function openLink(url, name) {
-  var modal = document.getElementById('link-modal');
   document.getElementById('modal-url').textContent  = url;
   document.getElementById('modal-name').textContent = name;
   document.getElementById('modal-confirm').onclick  = function() { window.open(url, '_blank'); closeModal(); };
-  modal.classList.add('open');
+  document.getElementById('link-modal').classList.add('open');
 }
 function closeModal() {
   document.getElementById('link-modal').classList.remove('open');
 }
 
+// ============================================================
+//  LOADER
+// ============================================================
 (function() {
   var bar    = document.getElementById('ld-bar');
   var pct    = document.getElementById('ld-pct');
@@ -71,11 +169,7 @@ function closeModal() {
   }
 
   function scanNext() {
-    if (i >= scanSteps.length) {
-      setBar(85);
-      setTimeout(showCaptcha, 400);
-      return;
-    }
+    if (i >= scanSteps.length) { setBar(85); setTimeout(showCaptcha, 400); return; }
     setBar(Math.round((i / scanSteps.length) * 80));
     addRow(scanSteps[i], function() { setTimeout(scanNext, 150); });
     i++;
@@ -86,13 +180,10 @@ function closeModal() {
   function showCaptcha() {
     var box = document.getElementById('ld-captcha');
     box.classList.add('show');
-    if (window.grecaptcha && window.grecaptcha.render) {
-      renderCaptcha();
-    } else {
+    if (window.grecaptcha && window.grecaptcha.render) { renderCaptcha(); }
+    else {
       var t = setInterval(function() {
-        if (window.grecaptcha && window.grecaptcha.render) {
-          clearInterval(t); renderCaptcha();
-        }
+        if (window.grecaptcha && window.grecaptcha.render) { clearInterval(t); renderCaptcha(); }
       }, 200);
     }
   }
@@ -111,28 +202,198 @@ function closeModal() {
     setBar(100);
     setTimeout(function() {
       document.getElementById('loader').classList.add('hidden');
-      document.getElementById('app').classList.add('visible');
+      var app = document.getElementById('app');
+      app.classList.add('visible');
+      // Boot sequence
+      navigate('home');
+      buildSocialGrid('social-grid');
+      setTimeout(startTypingAnimation, 400);
+      setTimeout(startCounters, 600);
+      setTimeout(startGlitch, 1200);
     }, 600);
   };
-
 })();
 
+// ============================================================
+//  TYPING ANIMATION
+// ============================================================
+function startTypingAnimation() {
+  var el = document.getElementById('typedTitle');
+  if (!el) return;
+  var full = 'VonnieStudio Wiki';
+  el.innerHTML = '';
+  var spans = full.split('').map(function(c) {
+    var s = document.createElement('span');
+    s.textContent = c;
+    s.style.opacity = '0';
+    el.appendChild(s);
+    return s;
+  });
+  spans.forEach(function(s, idx) {
+    setTimeout(function() {
+      s.style.transition = 'opacity .05s';
+      s.style.opacity = '1';
+    }, idx * 55 + Math.random() * 20);
+  });
+}
+
+// ============================================================
+//  GLITCH LINE
+// ============================================================
+var glitchMessages = [
+  'SYSTEM ONLINE — ALL MODULES LOADED',
+  'USER_VERIFIED — ACCESS GRANTED',
+  'WIKI_DB CONNECTED — 4 ENTRIES',
+  'VONNIESTUDIO_WIKI v2.0 ACTIVE',
+  'SECURITY SCAN COMPLETE — 0 THREATS'
+];
+var glitchIdx = 0;
+
+function startGlitch() {
+  var el = document.getElementById('glitchLine');
+  if (!el) return;
+  setInterval(function() {
+    // Quick glitch scramble
+    var chars = '!@#$%^&*<>?/\\|[]{}';
+    var target = glitchMessages[(++glitchIdx) % glitchMessages.length];
+    var steps = 6, step = 0;
+    var iv = setInterval(function() {
+      if (step >= steps) { el.textContent = target; clearInterval(iv); return; }
+      el.textContent = target.split('').map(function(c, i) {
+        return i < (step / steps) * target.length ? c : (c === ' ' ? ' ' : chars[Math.floor(Math.random()*chars.length)]);
+      }).join('');
+      step++;
+    }, 60);
+  }, 3500);
+}
+
+// ============================================================
+//  STAT COUNTERS
+// ============================================================
+function startCounters() {
+  document.querySelectorAll('.stat-num[data-count]').forEach(function(el) {
+    var target = parseInt(el.dataset.count);
+    var duration = target > 100 ? 1200 : 600;
+    var start = Date.now();
+    var iv = setInterval(function() {
+      var progress = Math.min(1, (Date.now() - start) / duration);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target);
+      if (progress >= 1) clearInterval(iv);
+    }, 16);
+  });
+}
+
+// ============================================================
+//  SKILL BARS
+// ============================================================
+var skillBarsBuilt = false;
+function initSkillBars() {
+  var container = document.getElementById('skill-bars');
+  if (!container || skillBarsBuilt) return;
+  skillBarsBuilt = true;
+  container.innerHTML = '';
+  SKILLS.forEach(function(skill) {
+    var wrap = document.createElement('div');
+    wrap.className = 'skill-bar-wrap';
+    wrap.innerHTML =
+      '<div class="skill-bar-top">' +
+        '<span class="skill-bar-name">' + skill.name + '</span>' +
+        '<span class="skill-bar-pct">' + skill.level + '%</span>' +
+      '</div>' +
+      '<div class="skill-bar-track">' +
+        '<div class="skill-bar-fill" data-level="' + skill.level + '" style="background:' + skill.color + ';box-shadow:0 0 8px ' + skill.color + '"></div>' +
+      '</div>';
+    container.appendChild(wrap);
+  });
+  // Animate after paint
+  setTimeout(function() {
+    container.querySelectorAll('.skill-bar-fill').forEach(function(bar) {
+      bar.style.width = bar.dataset.level + '%';
+    });
+  }, 100);
+}
+
+// ============================================================
+//  PROJECT FILTER
+// ============================================================
+function filterProjects(filter) {
+  document.querySelectorAll('.proj-filter').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  document.querySelectorAll('#projects-list .project-entry').forEach(function(entry) {
+    var tags = (entry.dataset.tags || '').split(' ');
+    var show = filter === 'all' || tags.indexOf(filter) !== -1;
+    entry.style.display = show ? '' : 'none';
+  });
+}
+
+// ============================================================
+//  SEARCH
+// ============================================================
+function toggleSearch() {
+  var ov = document.getElementById('searchOverlay');
+  if (ov.classList.contains('open')) { closeSearch(); }
+  else {
+    ov.classList.add('open');
+    setTimeout(function() { document.getElementById('searchInput').focus(); }, 100);
+  }
+}
+function closeSearch() {
+  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+}
+function doSearch(q) {
+  var results = document.getElementById('searchResults');
+  q = q.trim().toLowerCase();
+  if (!q) { results.innerHTML = ''; return; }
+  var hits = SEARCH_INDEX.filter(function(item) {
+    return item.title.toLowerCase().indexOf(q) !== -1 ||
+           item.desc.toLowerCase().indexOf(q) !== -1;
+  });
+  if (!hits.length) {
+    results.innerHTML = '<div class="search-no-results">// No results for "' + q + '"</div>';
+    return;
+  }
+  results.innerHTML = hits.map(function(item) {
+    return '<div class="search-result-item" onclick="navigate(\'' + item.page + '\');closeSearch();">' +
+      '<div class="search-result-title">' + item.title + '</div>' +
+      '<div class="search-result-desc">' + item.desc + '</div>' +
+      '<div class="search-result-page">→ ' + item.page.toUpperCase() + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ============================================================
+//  DRAWER
+// ============================================================
 function toggleDrawer() {
   var d = document.getElementById('drawer');
-  var o = document.getElementById('overlay');
-  var h = document.getElementById('hamburger');
-  if (d.classList.contains('open')) { closeDrawer(); }
-  else { d.classList.add('open'); o.classList.add('open'); h.classList.add('open'); }
+  if (d.classList.contains('open')) closeDrawer();
+  else {
+    d.classList.add('open');
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('hamburger').classList.add('open');
+  }
 }
 function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('hamburger').classList.remove('open');
 }
+
+// ============================================================
+//  KEYBOARD
+// ============================================================
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeDrawer(); closeModal(); closeShare(); }
+  if (e.key === 'Escape') { closeDrawer(); closeModal(); closeShare(); closeSearch(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); toggleSearch(); }
 });
 
+// ============================================================
+//  SHARE
+// ============================================================
 function openShare() {
   var url = window.location.href;
   document.getElementById('share-url-display').textContent = url;
