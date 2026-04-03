@@ -529,7 +529,7 @@
 
       <!-- INPUT -->
       <div class="comm-input-bar">
-        <button class="comm-img-btn" onclick="document.getElementById('imgFileInput').click()" title="แนบรูป">
+        <button class="comm-img-btn" onclick="document.getElementById('imgFileInput').click()" title="Attached picture">
           <i class="fa-solid fa-image"></i>
         </button>
         <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
@@ -692,9 +692,9 @@ window.handleRegister = async function() {
   const btn      = document.getElementById('registerBtn');
 
   // Validate
-  if (!username || !email || !password) return showError('กรอกข้อมูลให้ครบ');
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return showError('Username ใช้ได้แค่ a-z, 0-9, _ และต้องมี 3-20 ตัว');
-  if (password.length < 8) return showError('Password ต้องมีอย่างน้อย 8 ตัวอักษร');
+  if (!username || !email || !password) return showError('Complete information');
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return showError('Username only allows letters, numbers, and underscores — must be 3-20 characters');
+  if (password.length < 8) return showError('Password must be at least 8 characters');
 
   btn.disabled = true;
   btn.textContent = '[ CREATING... ]';
@@ -909,7 +909,7 @@ window.handleImageSelect = function(e) {
   const file = e.target.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) {
-    alert('รูปใหญ่เกินไป — สูงสุด 5MB');
+    alert('The image is too large — maximum 5MB');
     return;
   }
   selectedFile = file;
