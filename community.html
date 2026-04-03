@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VonnieStudio Community</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ============================================================
+   COMMUNITY PAGE STYLES
+   ============================================================ */
+
+/* AUTH SCREEN */
+.auth-screen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+.auth-window {
+  width: 420px; max-width: 95vw;
+  background: var(--bg-card);
+  border: 1px solid var(--cyan-border);
+  box-shadow: 0 0 40px var(--cyan-glow);
+  position: relative;
+  animation: fadeUp .4s ease both;
+}
+.auth-window::before, .auth-window::after {
+  content:""; position:absolute; width:8px; height:8px;
+  border-color:var(--cyan); border-style:solid;
+}
+.auth-window::before { top:-1px; left:-1px; border-width:2px 0 0 2px; }
+.auth-window::after  { bottom:-1px; right:-1px; border-width:0 2px 2px 0; }
+.auth-titlebar {
+  background: rgba(0,212,255,.08);
+  border-bottom: 1px solid rgba(0,212,255,.3);
+  padding: 8px 16px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: .14em;
+  display: flex; justify-content: space-between;
+}
+.auth-body { padding: 28px 24px; }
+.auth-logo {
+  text-align: center; margin-bottom: 24px;
+}
+.auth-logo-title {
+  font-family: var(--mono); font-size: 18px;
+  color: var(--cyan); letter-spacing: .08em;
+  text-shadow: 0 0 16px var(--cyan);
+}
+.auth-logo-sub {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim); letter-spacing: .16em;
+  margin-top: 4px;
+}
+.auth-tabs {
+  display: flex; margin-bottom: 20px;
+  border-bottom: 1px solid rgba(0,212,255,.2);
+}
+.auth-tab {
+  flex: 1; padding: 8px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .1em; text-align: center;
+  background: none; border: none;
+  color: var(--text-dim); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s; margin-bottom: -1px;
+}
+.auth-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+.auth-tab:hover  { color: var(--cyan); }
+
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.auth-field { display: flex; flex-direction: column; gap: 5px; }
+.auth-label {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim); letter-spacing: .12em;
+}
+.auth-input {
+  background: rgba(0,212,255,.04);
+  border: 1px solid rgba(0,212,255,.25);
+  padding: 9px 12px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--text-main); outline: none;
+  transition: border-color .15s;
+  caret-color: var(--cyan);
+}
+.auth-input:focus { border-color: var(--cyan); }
+.auth-input::placeholder { color: var(--text-dim); }
+.auth-hint {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim); letter-spacing: .06em;
+}
+.auth-btn {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .12em; padding: 10px;
+  border: 1px solid var(--cyan); background: var(--cyan-dim);
+  color: var(--cyan); cursor: pointer;
+  transition: all .15s; margin-top: 4px;
+}
+.auth-btn:hover { background: rgba(0,212,255,.25); }
+.auth-btn:disabled { opacity: .5; cursor: not-allowed; }
+.auth-error {
+  font-family: var(--mono); font-size: 10px;
+  color: #ff6b6b; letter-spacing: .06em;
+  background: rgba(255,107,107,.08);
+  border: 1px solid rgba(255,107,107,.3);
+  padding: 8px 12px; display: none;
+}
+.auth-error.show { display: block; }
+.auth-success {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--green); letter-spacing: .06em;
+  background: rgba(64,255,128,.06);
+  border: 1px solid rgba(64,255,128,.3);
+  padding: 8px 12px; display: none; text-align: center;
+}
+.auth-success.show { display: block; }
+.auth-privacy {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim); letter-spacing: .06em;
+  text-align: center; margin-top: 8px;
+  line-height: 1.6;
+}
+.auth-privacy i { color: var(--green); }
+.auth-back {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-bottom: 16px; transition: color .15s;
+}
+.auth-back:hover { color: var(--cyan); }
+
+/* ============================================================
+   COMMUNITY LAYOUT
+   ============================================================ */
+.community-screen { display: none; }
+.community-screen.show {
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+}
+
+/* TOP NAV (reuse wiki style) */
+.comm-nav {
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--cyan-border);
+  box-shadow: 0 0 20px var(--cyan-glow);
+  height: 56px; position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 14px;
+}
+.comm-nav-title {
+  font-family: var(--mono); font-size: 13px;
+  color: var(--cyan); letter-spacing: .08em;
+  text-shadow: 0 0 12px var(--cyan); flex: 1;
+}
+.comm-nav-title span { color: var(--text-dim); font-size: 10px; }
+.comm-nav-user {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px; color: var(--text-sub);
+}
+.comm-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--bg); flex-shrink: 0;
+}
+.comm-logout-btn {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .1em; padding: 4px 10px;
+  border: 1px solid rgba(255,107,107,.3);
+  background: transparent; color: #ff6b6b;
+  cursor: pointer; transition: all .15s;
+}
+.comm-logout-btn:hover { background: rgba(255,107,107,.08); border-color: #ff6b6b; }
+.comm-back-btn {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .1em; padding: 4px 10px;
+  border: 1px solid rgba(0,212,255,.3);
+  background: transparent; color: var(--cyan);
+  cursor: pointer; transition: all .15s; text-decoration: none;
+  display: flex; align-items: center; gap: 5px;
+}
+.comm-back-btn:hover { background: var(--cyan-dim); }
+
+/* COMMUNITY BODY */
+.community-body {
+  display: flex; flex: 1;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+/* SIDEBAR — rooms */
+.comm-sidebar {
+  width: 200px; flex-shrink: 0;
+  background: var(--bg-panel);
+  border-right: 1px solid rgba(0,212,255,.15);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.comm-sidebar-label {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim); letter-spacing: .2em;
+  padding: 14px 14px 6px; text-transform: uppercase;
+}
+.room-item {
+  padding: 8px 14px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-sub); cursor: pointer;
+  transition: all .1s;
+  border-left: 2px solid transparent;
+  display: flex; align-items: center; gap: 6px;
+}
+.room-item:hover { background: var(--cyan-dim); color: var(--cyan); }
+.room-item.active {
+  background: var(--cyan-dim); color: var(--cyan);
+  border-left-color: var(--cyan);
+}
+.room-item-hash { color: rgba(0,212,255,.4); font-size: 12px; }
+.comm-online-section { margin-top: auto; padding: 10px 14px; border-top: 1px solid rgba(0,212,255,.1); }
+.comm-online-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: .14em; margin-bottom: 6px; }
+.online-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); margin-right: 4px; }
+
+/* CHAT AREA */
+.comm-chat {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+}
+.comm-chat-header {
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(0,212,255,.12);
+  background: var(--bg-panel);
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-sub); display: flex; align-items: center; gap: 8px;
+}
+.comm-chat-room-name { color: var(--cyan); font-size: 13px; }
+
+/* MESSAGES */
+.comm-messages {
+  flex: 1; overflow-y: auto;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 2px;
+  scroll-behavior: smooth;
+}
+.comm-messages::-webkit-scrollbar { width: 4px; }
+.comm-messages::-webkit-scrollbar-track { background: transparent; }
+.comm-messages::-webkit-scrollbar-thumb { background: rgba(0,212,255,.2); }
+
+.msg-group { margin-bottom: 12px; }
+.msg-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+}
+.msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  color: var(--bg); flex-shrink: 0;
+}
+.msg-username {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--cyan); letter-spacing: .04em;
+}
+.msg-time {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text-dim);
+}
+.msg-bubble {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--text-main); line-height: 1.6;
+  padding: 6px 10px; margin-left: 36px;
+  background: rgba(0,212,255,.03);
+  border-left: 1px solid rgba(0,212,255,.1);
+  word-break: break-word;
+}
+.msg-bubble.own {
+  background: rgba(0,212,255,.06);
+  border-left-color: rgba(0,212,255,.3);
+}
+.msg-img {
+  max-width: 280px; max-height: 200px;
+  border: 1px solid rgba(0,212,255,.2);
+  cursor: pointer; margin-top: 4px;
+  display: block; margin-left: 36px;
+}
+.msg-img:hover { border-color: var(--cyan); }
+
+.comm-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: .1em; flex-direction: column; gap: 8px;
+}
+
+/* INPUT BAR */
+.comm-input-bar {
+  padding: 12px 18px;
+  border-top: 1px solid rgba(0,212,255,.15);
+  background: var(--bg-panel);
+  display: flex; align-items: center; gap: 10px;
+}
+.comm-input {
+  flex: 1; background: rgba(0,212,255,.04);
+  border: 1px solid rgba(0,212,255,.25);
+  padding: 9px 14px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--text-main); outline: none;
+  caret-color: var(--cyan); transition: border-color .15s;
+}
+.comm-input:focus { border-color: var(--cyan); }
+.comm-input::placeholder { color: var(--text-dim); }
+.comm-img-btn {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border: 1px solid rgba(0,212,255,.25);
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; font-size: 14px;
+}
+.comm-img-btn:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+.comm-send-btn {
+  padding: 0 16px; height: 36px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  border: 1px solid var(--cyan); background: var(--cyan-dim);
+  color: var(--cyan); cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+}
+.comm-send-btn:hover { background: rgba(0,212,255,.25); }
+.comm-send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* IMAGE PREVIEW */
+.img-preview-wrap {
+  padding: 8px 18px 0;
+  background: var(--bg-panel);
+  display: none; align-items: center; gap: 10px;
+}
+.img-preview-wrap.show { display: flex; }
+.img-preview-thumb {
+  height: 48px; border: 1px solid rgba(0,212,255,.3);
+}
+.img-preview-name {
+  font-family: var(--mono); font-size: 10px; color: var(--text-sub); flex: 1;
+}
+.img-preview-remove {
+  background: none; border: none; color: #ff6b6b;
+  font-family: var(--mono); font-size: 11px;
+  cursor: pointer; transition: color .15s;
+}
+.img-preview-remove:hover { color: #ff4444; }
+
+/* IMAGE LIGHTBOX */
+.lightbox {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.92); align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 90vw; max-height: 90vh; border: 1px solid var(--cyan-border); }
+.lightbox-close {
+  position: absolute; top: 20px; right: 24px;
+  background: none; border: none; color: var(--text-sub);
+  font-family: var(--mono); font-size: 16px; cursor: pointer;
+}
+
+/* LOADING */
+.comm-loading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; background: var(--bg);
+  font-family: var(--mono); font-size: 12px; color: var(--cyan);
+  letter-spacing: .1em; flex-direction: column; gap: 14px;
+}
+.comm-loading-bar {
+  width: 200px; height: 2px;
+  background: rgba(0,212,255,.1); border: 1px solid rgba(0,212,255,.2);
+}
+.comm-loading-fill {
+  height: 100%; background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+  animation: loadingPulse 1.2s ease infinite;
+}
+@keyframes loadingPulse {
+  0%   { width: 0%; }
+  50%  { width: 70%; }
+  100% { width: 100%; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .comm-sidebar { width: 48px; }
+  .comm-sidebar-label { display: none; }
+  .room-item { padding: 10px; justify-content: center; }
+  .room-item span:not(.room-item-hash) { display: none; }
+  .comm-online-section { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- LOADING SCREEN -->
+<div class="comm-loading" id="commLoading">
+  <div>// COMMUNITY.EXE — INITIALIZING</div>
+  <div class="comm-loading-bar"><div class="comm-loading-fill"></div></div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen" style="display:none;">
+  <div class="auth-window">
+    <div class="auth-titlebar">
+      <span>// VONNIE_AUTH.EXE — SECURE LOGIN</span>
+      <span id="authTime">00:00</span>
+    </div>
+    <div class="auth-body">
+      <a href="index.html" class="auth-back">
+        <i class="fa-solid fa-chevron-left" style="font-size:9px;"></i> Back to Wiki
+      </a>
+      <div class="auth-logo">
+        <div class="auth-logo-title">VONNIE<span style="color:var(--text-main)">STUDIO</span></div>
+        <div class="auth-logo-sub">// COMMUNITY ACCESS PORTAL</div>
+      </div>
+
+      <!-- TABS -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">[ LOGIN ]</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">[ REGISTER ]</button>
+      </div>
+
+      <!-- ERROR / SUCCESS -->
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-success" id="authSuccess"></div>
+
+      <!-- LOGIN FORM -->
+      <div id="formLogin">
+        <div class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label">EMAIL</label>
+            <input type="email" class="auth-input" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label class="auth-label">PASSWORD</label>
+            <input type="password" class="auth-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <button class="auth-btn" id="loginBtn" onclick="handleLogin()">[ LOGIN → ]</button>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="formRegister" style="display:none;">
+        <div class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label">USERNAME</label>
+            <input type="text" class="auth-input" id="regUsername" placeholder="vonnie_user" autocomplete="off" maxlength="20">
+            <span class="auth-hint">ตัวอักษร, ตัวเลข, _ เท่านั้น — สูงสุด 20 ตัว</span>
+          </div>
+          <div class="auth-field">
+            <label class="auth-label">EMAIL</label>
+            <input type="email" class="auth-input" id="regEmail" placeholder="your@email.com" autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label class="auth-label">PASSWORD</label>
+            <input type="password" class="auth-input" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร" autocomplete="new-password" minlength="8">
+          </div>
+          <button class="auth-btn" id="registerBtn" onclick="handleRegister()">[ CREATE ACCOUNT → ]</button>
+          <div class="auth-privacy">
+            <i class="fa-solid fa-shield-halved"></i>
+            เก็บแค่ username — ไม่มีชื่อจริง, ไม่มีเบอร์โทร, ไม่มี IP
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- COMMUNITY SCREEN -->
+<div class="community-screen" id="communityScreen">
+
+  <!-- NAV -->
+  <nav class="comm-nav">
+    <a href="index.html" class="comm-back-btn">
+      <i class="fa-solid fa-chevron-left" style="font-size:9px;"></i> WIKI
+    </a>
+    <div class="comm-nav-title">
+      VONNIESTUDIO <span>// COMMUNITY</span>
+    </div>
+    <div class="comm-nav-user">
+      <div class="comm-avatar" id="navAvatar">?</div>
+      <span id="navUsername">---</span>
+      <button class="comm-logout-btn" onclick="handleLogout()">[ LOGOUT ]</button>
+    </div>
+  </nav>
+
+  <!-- BODY -->
+  <div class="community-body">
+
+    <!-- SIDEBAR -->
+    <aside class="comm-sidebar">
+      <div class="comm-sidebar-label">Channels</div>
+      <div id="roomList"></div>
+      <div class="comm-online-section">
+        <div class="comm-online-label">// STATUS</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-sub);">
+          <span class="online-dot"></span><span id="onlineUser">---</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CHAT -->
+    <div class="comm-chat">
+      <div class="comm-chat-header">
+        <span class="comm-chat-room-name" id="chatRoomName">#general</span>
+        <span>— VonnieStudio Community</span>
+      </div>
+
+      <!-- IMAGE PREVIEW -->
+      <div class="img-preview-wrap" id="imgPreviewWrap">
+        <img class="img-preview-thumb" id="imgPreviewThumb" src="" alt="">
+        <span class="img-preview-name" id="imgPreviewName"></span>
+        <button class="img-preview-remove" onclick="removeImage()">[ ✕ REMOVE ]</button>
+      </div>
+
+      <!-- MESSAGES -->
+      <div class="comm-messages" id="commMessages">
+        <div class="comm-empty" id="commEmpty">
+          <i class="fa-solid fa-terminal" style="font-size:20px;color:rgba(0,212,255,.2);"></i>
+          <span>// No messages yet — be the first!</span>
+        </div>
+      </div>
+
+      <!-- INPUT -->
+      <div class="comm-input-bar">
+        <button class="comm-img-btn" onclick="document.getElementById('imgFileInput').click()" title="แนบรูป">
+          <i class="fa-solid fa-image"></i>
+        </button>
+        <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
+        <input type="text" class="comm-input" id="commInput"
+          placeholder="พิมพ์ข้อความ... (Enter เพื่อส่ง)"
+          autocomplete="off" maxlength="500"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}">
+        <button class="comm-send-btn" id="sendBtn" onclick="sendMessage()">[ SEND ]</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">[ ✕ CLOSE ]</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script type="module">
+import { supabase, signIn, signUp, signOut, getSession, getProfile } from './supabase.js';
+
+// ============================================================
+//  STATE
+// ============================================================
+let currentUser    = null;
+let currentProfile = null;
+let currentRoomId  = null;
+let currentRoomName = '#general';
+let rooms          = [];
+let messages       = [];
+let realtimeSub    = null;
+let selectedFile   = null;
+
+// ============================================================
+//  INIT
+// ============================================================
+async function init() {
+  startAuthClock();
+  const session = await getSession();
+  if (session) {
+    currentUser = session.user;
+    const { data } = await getProfile(currentUser.id);
+    currentProfile = data;
+    showCommunity();
+  } else {
+    showAuth();
+  }
+}
+
+function showAuth() {
+  document.getElementById('commLoading').style.display = 'none';
+  document.getElementById('authScreen').style.display  = 'flex';
+}
+
+async function showCommunity() {
+  document.getElementById('commLoading').style.display = 'none';
+  document.getElementById('authScreen').style.display  = 'none';
+  const cs = document.getElementById('communityScreen');
+  cs.classList.add('show');
+
+  // Set nav user info
+  const color = currentProfile?.avatar_color || '#00d4ff';
+  const uname = currentProfile?.username || 'user';
+  document.getElementById('navUsername').textContent = uname;
+  document.getElementById('onlineUser').textContent  = uname;
+  const av = document.getElementById('navAvatar');
+  av.textContent = uname[0].toUpperCase();
+  av.style.background = color;
+
+  await loadRooms();
+}
+
+// ============================================================
+//  AUTH CLOCK
+// ============================================================
+function startAuthClock() {
+  function tick() {
+    const now = new Date();
+    const t = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const el = document.getElementById('authTime');
+    if (el) el.textContent = t;
+  }
+  tick();
+  setInterval(tick, 30000);
+}
+
+// ============================================================
+//  TAB SWITCH
+// ============================================================
+window.switchTab = function(tab) {
+  document.getElementById('formLogin').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('formRegister').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active',    tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  clearAuthMessages();
+};
+
+function clearAuthMessages() {
+  const err = document.getElementById('authError');
+  const suc = document.getElementById('authSuccess');
+  err.classList.remove('show'); err.textContent = '';
+  suc.classList.remove('show'); suc.textContent = '';
+}
+
+function showError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = '// ERROR: ' + msg;
+  el.classList.add('show');
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('authSuccess');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+// ============================================================
+//  LOGIN
+// ============================================================
+window.handleLogin = async function() {
+  clearAuthMessages();
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn      = document.getElementById('loginBtn');
+
+  if (!email || !password) return showError('กรอกข้อมูลให้ครบ');
+
+  btn.disabled = true;
+  btn.textContent = '[ CONNECTING... ]';
+
+  const { data, error } = await signIn(email, password);
+  if (error) {
+    showError(error.message === 'Invalid login credentials' ? 'Email หรือ Password ไม่ถูกต้อง' : error.message);
+    btn.disabled = false;
+    btn.textContent = '[ LOGIN → ]';
+    return;
+  }
+
+  currentUser = data.user;
+  const { data: profile } = await getProfile(currentUser.id);
+  currentProfile = profile;
+  showCommunity();
+};
+
+// Enter key for login
+document.getElementById('loginPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+
+// ============================================================
+//  REGISTER
+// ============================================================
+window.handleRegister = async function() {
+  clearAuthMessages();
+  const username = document.getElementById('regUsername').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const btn      = document.getElementById('registerBtn');
+
+  // Validate
+  if (!username || !email || !password) return showError('กรอกข้อมูลให้ครบ');
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return showError('Username ใช้ได้แค่ a-z, 0-9, _ และต้องมี 3-20 ตัว');
+  if (password.length < 8) return showError('Password ต้องมีอย่างน้อย 8 ตัวอักษร');
+
+  btn.disabled = true;
+  btn.textContent = '[ CREATING... ]';
+
+  const { error } = await signUp(email, password, username);
+  if (error) {
+    showError(error.message);
+    btn.disabled = false;
+    btn.textContent = '[ CREATE ACCOUNT → ]';
+    return;
+  }
+
+  showSuccess('✓ สมัครสำเร็จ! กรุณาตรวจสอบ Email เพื่อยืนยันบัญชี แล้วกลับมา Login');
+  btn.disabled = false;
+  btn.textContent = '[ CREATE ACCOUNT → ]';
+};
+
+// ============================================================
+//  LOGOUT
+// ============================================================
+window.handleLogout = async function() {
+  if (realtimeSub) supabase.removeChannel(realtimeSub);
+  await signOut();
+  currentUser = currentProfile = currentRoomId = null;
+  messages = [];
+  document.getElementById('communityScreen').classList.remove('show');
+  document.getElementById('commMessages').innerHTML = '';
+  showAuth();
+};
+
+// ============================================================
+//  ROOMS
+// ============================================================
+async function loadRooms() {
+  const { data } = await supabase.from('rooms').select('*').order('created_at');
+  if (!data) return;
+  rooms = data;
+
+  const list = document.getElementById('roomList');
+  list.innerHTML = '';
+  data.forEach((room, i) => {
+    const div = document.createElement('div');
+    div.className = 'room-item' + (i === 0 ? ' active' : '');
+    div.innerHTML = `<span class="room-item-hash">#</span><span>${room.name.replace('#','')}</span>`;
+    div.onclick = () => selectRoom(room, div);
+    list.appendChild(div);
+    if (i === 0) selectRoom(room, div, true);
+  });
+}
+
+async function selectRoom(room, el, silent = false) {
+  currentRoomId   = room.id;
+  currentRoomName = room.name;
+  document.getElementById('chatRoomName').textContent = room.name;
+  document.querySelectorAll('.room-item').forEach(r => r.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (!silent) document.getElementById('commMessages').innerHTML = '';
+  await loadMessages();
+  subscribeRealtime();
+}
+
+// ============================================================
+//  MESSAGES
+// ============================================================
+async function loadMessages() {
+  const { data } = await supabase
+    .from('messages')
+    .select('*, profiles(username, avatar_color)')
+    .eq('room_id', currentRoomId)
+    .order('created_at', { ascending: true })
+    .limit(100);
+
+  const container = document.getElementById('commMessages');
+  container.innerHTML = '';
+
+  if (!data || !data.length) {
+    container.innerHTML = `<div class="comm-empty">
+      <i class="fa-solid fa-terminal" style="font-size:20px;color:rgba(0,212,255,.2);"></i>
+      <span>// No messages yet — be the first!</span>
+    </div>`;
+    return;
+  }
+
+  data.forEach(msg => renderMessage(msg));
+  scrollToBottom();
+}
+
+function renderMessage(msg) {
+  const container = document.getElementById('commMessages');
+  const empty = document.getElementById('commEmpty');
+  if (empty) empty.remove();
+
+  const isOwn     = msg.user_id === currentUser?.id;
+  const username  = msg.profiles?.username || 'unknown';
+  const color     = msg.profiles?.avatar_color || '#00d4ff';
+  const initial   = username[0].toUpperCase();
+  const time      = new Date(msg.created_at).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+
+  const group = document.createElement('div');
+  group.className = 'msg-group';
+  group.dataset.msgId = msg.id;
+
+  let html = `
+    <div class="msg-header">
+      <div class="msg-avatar" style="background:${color}">${initial}</div>
+      <span class="msg-username">${escHtml(username)}</span>
+      <span class="msg-time">${time}</span>
+      ${isOwn ? `<button onclick="deleteMessage('${msg.id}')" style="margin-left:auto;background:none;border:none;color:rgba(255,107,107,.4);font-family:var(--mono);font-size:9px;cursor:pointer;transition:color .15s;" onmouseover="this.style.color='#ff6b6b'" onmouseout="this.style.color='rgba(255,107,107,.4)'">[ DEL ]</button>` : ''}
+    </div>`;
+
+  if (msg.content) {
+    html += `<div class="msg-bubble${isOwn ? ' own' : ''}">${escHtml(msg.content)}</div>`;
+  }
+  if (msg.image_url) {
+    html += `<img class="msg-img" src="${msg.image_url}" alt="image" onclick="openLightbox('${msg.image_url}')">`;
+  }
+
+  group.innerHTML = html;
+  container.appendChild(group);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('commMessages');
+  c.scrollTop = c.scrollHeight;
+}
+
+// ============================================================
+//  SEND MESSAGE
+// ============================================================
+window.sendMessage = async function() {
+  const input   = document.getElementById('commInput');
+  const content = input.value.trim();
+  const btn     = document.getElementById('sendBtn');
+
+  if (!content && !selectedFile) return;
+  if (!currentRoomId) return;
+
+  btn.disabled = true;
+
+  let image_url = null;
+
+  // Upload image ถ้ามี
+  if (selectedFile) {
+    const ext      = selectedFile.name.split('.').pop();
+    const filename = `${currentUser.id}/${Date.now()}.${ext}`;
+    const { data: up, error: upErr } = await supabase.storage
+      .from('community-images')
+      .upload(filename, selectedFile, { cacheControl: '3600', upsert: false });
+
+    if (!upErr) {
+      const { data: urlData } = supabase.storage.from('community-images').getPublicUrl(filename);
+      image_url = urlData.publicUrl;
+    }
+    removeImage();
+  }
+
+  const { error } = await supabase.from('messages').insert({
+    user_id:  currentUser.id,
+    room_id:  currentRoomId,
+    content:  content || null,
+    image_url
+  });
+
+  if (!error) {
+    input.value = '';
+  }
+
+  btn.disabled = false;
+  input.focus();
+};
+
+// ============================================================
+//  DELETE MESSAGE
+// ============================================================
+window.deleteMessage = async function(id) {
+  await supabase.from('messages').delete().eq('id', id);
+  const el = document.querySelector(`[data-msg-id="${id}"]`);
+  if (el) el.remove();
+};
+
+// ============================================================
+//  REALTIME
+// ============================================================
+function subscribeRealtime() {
+  if (realtimeSub) supabase.removeChannel(realtimeSub);
+
+  realtimeSub = supabase
+    .channel('messages-' + currentRoomId)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+      filter: `room_id=eq.${currentRoomId}`
+    }, async (payload) => {
+      // ดึง profile ของผู้ส่ง
+      const { data: profile } = await getProfile(payload.new.user_id);
+      const fullMsg = { ...payload.new, profiles: profile };
+      renderMessage(fullMsg);
+      scrollToBottom();
+    })
+    .subscribe();
+}
+
+// ============================================================
+//  IMAGE SELECT
+// ============================================================
+window.handleImageSelect = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('รูปใหญ่เกินไป — สูงสุด 5MB');
+    return;
+  }
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('imgPreviewThumb').src = ev.target.result;
+    document.getElementById('imgPreviewName').textContent = file.name;
+    document.getElementById('imgPreviewWrap').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeImage = function() {
+  selectedFile = null;
+  document.getElementById('imgFileInput').value = '';
+  document.getElementById('imgPreviewThumb').src = '';
+  document.getElementById('imgPreviewName').textContent = '';
+  document.getElementById('imgPreviewWrap').classList.remove('show');
+};
+
+// ============================================================
+//  LIGHTBOX
+// ============================================================
+window.openLightbox = function(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('open');
+};
+window.closeLightbox = function() {
+  document.getElementById('lightbox').classList.remove('open');
+};
+
+// ============================================================
+//  CURSOR EFFECT (reuse from wiki)
+// ============================================================
+(function() {
+  var dot = document.getElementById('cursorDot');
+  var ring = document.getElementById('cursorRing');
+  if (!dot || !ring || 'ontouchstart' in window) {
+    if(dot) dot.style.display='none';
+    if(ring) ring.style.display='none';
+    return;
+  }
+  var mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',function(e){
+    mx=e.clientX;my=e.clientY;
+    dot.style.left=mx+'px';dot.style.top=my+'px';
+  });
+  document.addEventListener('mousedown',function(){ring.classList.add('clicking');});
+  document.addEventListener('mouseup',function(){ring.classList.remove('clicking');});
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function loop(){
+    rx=lerp(rx,mx,.18);ry=lerp(ry,my,.18);
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+// ============================================================
+//  ESC KEY
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// START
+init();
+</script>
+</body>
+</html>
