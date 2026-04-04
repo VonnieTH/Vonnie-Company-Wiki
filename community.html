@@ -41,7 +41,7 @@
 
 /* COMMUNITY */
 .community-screen { display:none; }
-.community-screen.show { display:flex; flex-direction:column; min-height:100vh; }
+.community-screen.show { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
 .comm-nav { background:var(--bg-header); border-bottom:1px solid var(--cyan-border); box-shadow:0 0 20px var(--cyan-glow); height:56px; position:sticky; top:0; z-index:200; display:flex; align-items:center; padding:0 20px; gap:14px; }
 .comm-nav-title { font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:.08em; text-shadow:0 0 12px var(--cyan); flex:1; }
@@ -168,10 +168,21 @@
 .profile-preview-role { font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:2px; letter-spacing:.08em; }
 
 .profile-section-label { font-family:var(--mono); font-size:9px; color:var(--text-dim); letter-spacing:.14em; margin-bottom:10px; }
-.color-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin-bottom:18px; }
-.color-swatch { width:100%; aspect-ratio:1; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all .15s; }
-.color-swatch:hover { transform:scale(1.15); }
-.color-swatch.selected { border-color:#fff; box-shadow:0 0 8px rgba(255,255,255,.4); }
+
+/* AVATAR IMAGE */
+.avatar-img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+.comm-avatar img, .msg-avatar img, .profile-preview-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+
+/* AVATAR UPLOAD */
+.avatar-upload-zone { border:1px dashed rgba(0,212,255,.3); background:rgba(0,212,255,.03); padding:20px; text-align:center; cursor:pointer; transition:all .2s; margin-bottom:18px; }
+.avatar-upload-zone:hover { border-color:var(--cyan); background:rgba(0,212,255,.07); }
+.avatar-upload-zone.drag-over { border-color:var(--cyan); background:rgba(0,212,255,.1); }
+.avatar-upload-icon { font-size:24px; color:rgba(0,212,255,.4); margin-bottom:8px; }
+.avatar-upload-text { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:.08em; }
+.avatar-upload-sub { font-family:var(--mono); font-size:8px; color:var(--text-dim); margin-top:4px; }
+.avatar-upload-preview { width:80px; height:80px; border-radius:50%; border:2px solid var(--cyan); overflow:hidden; margin:0 auto 12px; position:relative; }
+.avatar-upload-preview img { width:100%; height:100%; object-fit:cover; }
+.avatar-upload-change { font-family:var(--mono); font-size:9px; color:var(--cyan); background:none; border:none; cursor:pointer; margin-top:8px; letter-spacing:.08em; }
 
 .profile-save-btn { width:100%; font-family:var(--mono); font-size:10px; letter-spacing:.12em; padding:9px; border:1px solid var(--cyan); background:var(--cyan-dim); color:var(--cyan); cursor:pointer; transition:all .15s; }
 .profile-save-btn:hover { background:rgba(0,212,255,.25); }
@@ -359,8 +370,19 @@
           <div class="profile-preview-role">// Community Member</div>
         </div>
       </div>
-      <div class="profile-section-label">// AVATAR COLOR</div>
-      <div class="color-grid" id="colorGrid"></div>
+      <div class="profile-section-label">// AVATAR IMAGE</div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarSelect(event)">
+      <div class="avatar-upload-zone" id="avatarUploadZone" onclick="document.getElementById('avatarFileInput').click()">
+        <div id="avatarUploadContent">
+          <div class="avatar-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <div class="avatar-upload-text">Click or drag to upload</div>
+          <div class="avatar-upload-sub">PNG, JPG, GIF · max 2MB</div>
+        </div>
+        <div id="avatarPreviewContent" style="display:none">
+          <div class="avatar-upload-preview"><img id="avatarPreviewImg" src="" alt="preview"></div>
+          <button class="avatar-upload-change" onclick="event.stopPropagation();document.getElementById('avatarFileInput').click()">[ CHANGE IMAGE ]</button>
+        </div>
+      </div>
       <button class="profile-save-btn" id="profileSaveBtn" onclick="saveProfile()">[ SAVE CHANGES ]</button>
       <div class="profile-save-msg" id="profileSaveMsg"></div>
     </div>
@@ -380,14 +402,8 @@ let realtimeSub     = null;
 let presenceSub     = null;
 let selectedFile    = null;
 let selectedColor   = null;
+let selectedAvatarFile = null;
 let serverStart     = Date.now();
-
-const AVATAR_COLORS = [
-  '#00d4ff','#9b6dff','#40ff80','#f0c040',
-  '#ff6b6b','#ff9f40','#00ffcc','#ff69b4',
-  '#7ec8e3','#c8a2c8','#98fb98','#ffd700',
-  '#ff7f50','#87ceeb','#dda0dd','#f08080'
-];
 
 // ============================================================
 //  INIT
@@ -419,16 +435,28 @@ async function showCommunity() {
   await loadRooms();
   await loadTotalMembers();
   initPresence();
-  initColorGrid();
+}
+
+// ============================================================
+//  AVATAR HELPER
+// ============================================================
+function setAvatarEl(el, avatarUrl, color, letter) {
+  if (avatarUrl) {
+    el.style.background = 'transparent';
+    el.innerHTML = `<img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+  } else {
+    el.style.background = color || '#00d4ff';
+    el.textContent = letter || '?';
+  }
 }
 
 function updateNavAvatar() {
-  const color = currentProfile?.avatar_color || '#00d4ff';
-  const uname = currentProfile?.username || 'user';
+  const color   = currentProfile?.avatar_color || '#00d4ff';
+  const uname   = currentProfile?.username || 'user';
+  const avatarUrl = currentProfile?.avatar_url || null;
   document.getElementById('navUsername').textContent = uname;
   const av = document.getElementById('navAvatar');
-  av.textContent = uname[0].toUpperCase();
-  av.style.background = color;
+  setAvatarEl(av, avatarUrl, color, uname[0].toUpperCase());
 }
 
 // ============================================================
@@ -637,7 +665,7 @@ async function loadMessages() {
 
   const userIds = [...new Set(data.map(m => m.user_id).filter(Boolean))];
   const { data: profiles } = await supabase
-    .from('profiles').select('id, username, avatar_color').in('id', userIds);
+    .from('profiles').select('id, username, avatar_color, avatar_url').in('id', userIds);
   const profileMap = {};
   (profiles||[]).forEach(p => { profileMap[p.id] = p; });
 
@@ -660,6 +688,7 @@ function renderMessage(msg) {
   const isOwn    = msg.user_id === currentUser?.id;
   const username = msg.profiles?.username || 'unknown';
   const color    = msg.profiles?.avatar_color || '#00d4ff';
+  const avatarUrl = msg.profiles?.avatar_url || null;
   const initial  = username[0].toUpperCase();
   const time     = new Date(msg.created_at).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
 
@@ -667,8 +696,14 @@ function renderMessage(msg) {
   group.className = 'msg-group';
   group.dataset.msgId = msg.id;
 
+  // Build avatar HTML
+  const avatarInner = avatarUrl
+    ? `<img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+    : initial;
+  const avatarStyle = avatarUrl ? 'background:transparent;' : `background:${color};`;
+
   let html = `<div class="msg-header">
-    <div class="msg-avatar" style="background:${color}">${initial}</div>
+    <div class="msg-avatar" style="${avatarStyle}">${avatarInner}</div>
     <span class="msg-username">${escHtml(username)}</span>
     <span class="msg-time">${time}</span>
     ${isOwn ? `<button onclick="deleteMessage('${msg.id}')" style="margin-left:auto;background:none;border:none;color:rgba(255,107,107,.4);font-family:var(--mono);font-size:9px;cursor:pointer;" onmouseover="this.style.color='#ff6b6b'" onmouseout="this.style.color='rgba(255,107,107,.4)'">[ DEL ]</button>` : ''}
@@ -791,7 +826,7 @@ function subscribeRealtime() {
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`room_id=eq.${currentRoomId}` },
       async (payload) => {
         const { data: profile } = await supabase.from('profiles')
-          .select('id, username, avatar_color').eq('id', payload.new.user_id).single();
+          .select('id, username, avatar_color, avatar_url').eq('id', payload.new.user_id).single();
         renderMessage({ ...payload.new, profiles: profile||null });
         scrollToBottom();
       })
@@ -836,36 +871,64 @@ window.closeLightbox = function() {
 // ============================================================
 //  PROFILE MODAL
 // ============================================================
-function initColorGrid() {
-  const grid = document.getElementById('colorGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  AVATAR_COLORS.forEach(c => {
-    const sw = document.createElement('div');
-    sw.className = 'color-swatch' + (c === (currentProfile?.avatar_color||'#00d4ff') ? ' selected' : '');
-    sw.style.background = c;
-    sw.onclick = () => {
-      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-      sw.classList.add('selected');
-      selectedColor = c;
-      // live preview
-      const av = document.getElementById('previewAvatar');
-      if (av) av.style.background = c;
-    };
-    grid.appendChild(sw);
-  });
-  selectedColor = currentProfile?.avatar_color || '#00d4ff';
+function resetAvatarUploadUI(avatarUrl) {
+  const zone     = document.getElementById('avatarUploadZone');
+  const initial  = document.getElementById('avatarUploadContent');
+  const preview  = document.getElementById('avatarPreviewContent');
+  const previewImg = document.getElementById('avatarPreviewImg');
+
+  if (avatarUrl) {
+    previewImg.src = avatarUrl;
+    initial.style.display  = 'none';
+    preview.style.display  = 'block';
+  } else {
+    initial.style.display  = 'block';
+    preview.style.display  = 'none';
+  }
+
+  // Drag & drop
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add('drag-over'); };
+  zone.ondragleave = () => zone.classList.remove('drag-over');
+  zone.ondrop = e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) applyAvatarFile(file);
+  };
 }
 
+function applyAvatarFile(file) {
+  if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+  if (file.size > 2*1024*1024) { alert('Max 2MB'); return; }
+  selectedAvatarFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('avatarPreviewImg').src = ev.target.result;
+    document.getElementById('avatarPreviewContent').style.display = 'block';
+    document.getElementById('avatarUploadContent').style.display  = 'none';
+    // live update preview avatar in modal
+    const av = document.getElementById('previewAvatar');
+    av.style.background = 'transparent';
+    av.innerHTML = `<img src="${ev.target.result}" alt="preview" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+window.handleAvatarSelect = function(e) {
+  const file = e.target.files[0];
+  if (file) applyAvatarFile(file);
+};
+
 window.openProfile = function() {
-  const uname = currentProfile?.username || 'user';
-  const color = currentProfile?.avatar_color || '#00d4ff';
+  selectedAvatarFile = null;
+  const uname     = currentProfile?.username || 'user';
+  const color     = currentProfile?.avatar_color || '#00d4ff';
+  const avatarUrl = currentProfile?.avatar_url || null;
   const av = document.getElementById('previewAvatar');
-  av.textContent = uname[0].toUpperCase();
-  av.style.background = color;
+  setAvatarEl(av, avatarUrl, color, uname[0].toUpperCase());
   document.getElementById('previewName').textContent = uname;
   document.getElementById('profileSaveMsg').textContent = '';
-  initColorGrid();
+  document.getElementById('avatarFileInput').value = '';
+  resetAvatarUploadUI(avatarUrl);
   document.getElementById('profileModal').classList.add('open');
 };
 
@@ -876,28 +939,45 @@ window.closeProfile = function() {
 window.saveProfile = async function() {
   const btn = document.getElementById('profileSaveBtn');
   const msg = document.getElementById('profileSaveMsg');
-  if (!selectedColor) return;
-  btn.disabled = true; btn.textContent = '[ SAVING... ]';
+  if (!selectedAvatarFile) {
+    msg.textContent = '// No new image selected';
+    msg.style.color = 'var(--text-dim)';
+    return;
+  }
+  btn.disabled = true; btn.textContent = '[ UPLOADING... ]';
+  msg.textContent = ''; msg.style.color = 'var(--green)';
 
-  const { error } = await supabase.from('profiles')
-    .update({ avatar_color: selectedColor })
+  // Upload to Supabase Storage bucket: avatars
+  const ext = selectedAvatarFile.name.split('.').pop() || 'jpg';
+  const path = `${currentUser.id}/avatar.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, selectedAvatarFile, { upsert: true, contentType: selectedAvatarFile.type });
+
+  if (upErr) {
+    msg.textContent = '// Upload error: ' + upErr.message;
+    msg.style.color = '#ff6b6b';
+    btn.disabled = false; btn.textContent = '[ SAVE CHANGES ]';
+    return;
+  }
+
+  // Get public URL (add cache-bust so browsers reload it)
+  const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+  const avatarUrl = urlData.publicUrl + '?v=' + Date.now();
+
+  // Update profile row
+  const { error: dbErr } = await supabase.from('profiles')
+    .update({ avatar_url: avatarUrl })
     .eq('id', currentUser.id);
 
-  if (!error) {
-    currentProfile = { ...currentProfile, avatar_color: selectedColor };
-    updateNavAvatar();
-    msg.textContent = '✓ Profile updated!';
-    // Update presence
-    if (presenceSub) {
-      await presenceSub.track({
-        user_id: currentUser.id,
-        username: currentProfile.username,
-        color: selectedColor
-      });
-    }
-  } else {
-    msg.textContent = '// Error: ' + error.message;
+  if (dbErr) {
+    msg.textContent = '// DB error: ' + dbErr.message;
     msg.style.color = '#ff6b6b';
+  } else {
+    currentProfile = { ...currentProfile, avatar_url: avatarUrl };
+    updateNavAvatar();
+    selectedAvatarFile = null;
+    msg.textContent = '✓ Avatar updated!';
   }
   btn.disabled = false; btn.textContent = '[ SAVE CHANGES ]';
 };
