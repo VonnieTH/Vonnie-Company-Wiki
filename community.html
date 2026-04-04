@@ -184,6 +184,24 @@
 .avatar-upload-preview img { width:100%; height:100%; object-fit:cover; }
 .avatar-upload-change { font-family:var(--mono); font-size:9px; color:var(--cyan); background:none; border:none; cursor:pointer; margin-top:8px; letter-spacing:.08em; }
 
+/* IMAGE CROPPER */
+.crop-editor { display:none; flex-direction:column; align-items:center; gap:10px; margin-bottom:18px; }
+.crop-editor.show { display:flex; }
+.crop-canvas-wrap { position:relative; width:240px; height:240px; border:1px solid rgba(0,212,255,.3); overflow:hidden; cursor:grab; user-select:none; flex-shrink:0; background:#000; }
+.crop-canvas-wrap:active { cursor:grabbing; }
+.crop-canvas-wrap canvas { display:block; }
+.crop-overlay { position:absolute; inset:0; pointer-events:none; }
+.crop-controls { width:100%; display:flex; flex-direction:column; gap:8px; }
+.crop-zoom-row { display:flex; align-items:center; gap:8px; }
+.crop-zoom-label { font-family:var(--mono); font-size:9px; color:var(--text-dim); width:32px; }
+.crop-zoom-slider { flex:1; accent-color:var(--cyan); cursor:pointer; }
+.crop-zoom-val { font-family:var(--mono); font-size:9px; color:var(--cyan); width:32px; text-align:right; }
+.crop-actions { display:flex; gap:8px; width:100%; }
+.crop-apply-btn { flex:1; font-family:var(--mono); font-size:10px; letter-spacing:.1em; padding:7px; border:1px solid var(--cyan); background:var(--cyan-dim); color:var(--cyan); cursor:pointer; transition:all .15s; }
+.crop-apply-btn:hover { background:rgba(0,212,255,.25); }
+.crop-cancel-btn { font-family:var(--mono); font-size:10px; letter-spacing:.1em; padding:7px 12px; border:1px solid rgba(0,212,255,.2); background:transparent; color:var(--text-dim); cursor:pointer; transition:all .15s; }
+.crop-cancel-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+
 .profile-save-btn { width:100%; font-family:var(--mono); font-size:10px; letter-spacing:.12em; padding:9px; border:1px solid var(--cyan); background:var(--cyan-dim); color:var(--cyan); cursor:pointer; transition:all .15s; }
 .profile-save-btn:hover { background:rgba(0,212,255,.25); }
 .profile-save-btn:disabled { opacity:.5; cursor:not-allowed; }
@@ -372,6 +390,8 @@
       </div>
       <div class="profile-section-label">// AVATAR IMAGE</div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarSelect(event)">
+
+      <!-- Upload zone (shown when no image picked) -->
       <div class="avatar-upload-zone" id="avatarUploadZone" onclick="document.getElementById('avatarFileInput').click()">
         <div id="avatarUploadContent">
           <div class="avatar-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
@@ -383,6 +403,42 @@
           <button class="avatar-upload-change" onclick="event.stopPropagation();document.getElementById('avatarFileInput').click()">[ CHANGE IMAGE ]</button>
         </div>
       </div>
+
+      <!-- Crop editor (shown after image picked, before apply) -->
+      <div class="crop-editor" id="cropEditor">
+        <div class="crop-canvas-wrap" id="cropWrap">
+          <canvas id="cropCanvas" width="240" height="240"></canvas>
+          <svg class="crop-overlay" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+            <!-- Dark mask outside circle -->
+            <defs>
+              <mask id="circleMask">
+                <rect width="240" height="240" fill="white"/>
+                <circle cx="120" cy="120" r="108" fill="black"/>
+              </mask>
+            </defs>
+            <rect width="240" height="240" fill="rgba(0,0,0,0.6)" mask="url(#circleMask)"/>
+            <!-- Circle border -->
+            <circle cx="120" cy="120" r="108" fill="none" stroke="rgba(0,212,255,0.8)" stroke-width="1.5"/>
+            <!-- Corner marks -->
+            <line x1="0" y1="120" x2="12" y2="120" stroke="rgba(0,212,255,0.4)" stroke-width="1"/>
+            <line x1="228" y1="120" x2="240" y2="120" stroke="rgba(0,212,255,0.4)" stroke-width="1"/>
+            <line x1="120" y1="0" x2="120" y2="12" stroke="rgba(0,212,255,0.4)" stroke-width="1"/>
+            <line x1="120" y1="228" x2="120" y2="240" stroke="rgba(0,212,255,0.4)" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="crop-controls">
+          <div class="crop-zoom-row">
+            <span class="crop-zoom-label">ZOOM</span>
+            <input type="range" class="crop-zoom-slider" id="cropZoom" min="0.5" max="3" step="0.01" value="1">
+            <span class="crop-zoom-val" id="cropZoomVal">1.0×</span>
+          </div>
+          <div class="crop-actions">
+            <button class="crop-cancel-btn" onclick="cancelCrop()">[ CANCEL ]</button>
+            <button class="crop-apply-btn" onclick="applyCrop()">[ APPLY CROP ]</button>
+          </div>
+        </div>
+      </div>
+
       <button class="profile-save-btn" id="profileSaveBtn" onclick="saveProfile()">[ SAVE CHANGES ]</button>
       <div class="profile-save-msg" id="profileSaveMsg"></div>
     </div>
@@ -869,13 +925,160 @@ window.closeLightbox = function() {
 };
 
 // ============================================================
-//  PROFILE MODAL
+//  PROFILE MODAL + IMAGE CROPPER
 // ============================================================
+
+// --- Cropper state ---
+let cropImage   = null;   // HTMLImageElement
+let cropOffX    = 0;      // image offset from center
+let cropOffY    = 0;
+let cropScale   = 1;
+let cropDragging = false;
+let cropDragSX  = 0;
+let cropDragSY  = 0;
+let cropStartOX = 0;
+let cropStartOY = 0;
+
+const CROP_SIZE = 240;
+const CROP_R    = 108;
+
+function cropDraw() {
+  const canvas = document.getElementById('cropCanvas');
+  if (!canvas || !cropImage) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
+
+  const iw = cropImage.naturalWidth  * cropScale;
+  const ih = cropImage.naturalHeight * cropScale;
+  const cx = CROP_SIZE / 2 + cropOffX;
+  const cy = CROP_SIZE / 2 + cropOffY;
+
+  ctx.drawImage(cropImage, cx - iw/2, cy - ih/2, iw, ih);
+}
+
+function initCropEvents() {
+  const wrap = document.getElementById('cropWrap');
+  if (!wrap) return;
+
+  // Mouse
+  wrap.onmousedown = e => {
+    cropDragging = true;
+    cropDragSX = e.clientX; cropDragSY = e.clientY;
+    cropStartOX = cropOffX; cropStartOY = cropOffY;
+    e.preventDefault();
+  };
+  document.onmousemove = e => {
+    if (!cropDragging) return;
+    cropOffX = cropStartOX + (e.clientX - cropDragSX);
+    cropOffY = cropStartOY + (e.clientY - cropDragSY);
+    cropDraw();
+  };
+  document.onmouseup = () => { cropDragging = false; };
+
+  // Touch
+  wrap.ontouchstart = e => {
+    const t = e.touches[0];
+    cropDragging = true;
+    cropDragSX = t.clientX; cropDragSY = t.clientY;
+    cropStartOX = cropOffX; cropStartOY = cropOffY;
+  };
+  wrap.ontouchmove = e => {
+    if (!cropDragging) return;
+    const t = e.touches[0];
+    cropOffX = cropStartOX + (t.clientX - cropDragSX);
+    cropOffY = cropStartOY + (t.clientY - cropDragSY);
+    cropDraw(); e.preventDefault();
+  };
+  wrap.ontouchend = () => { cropDragging = false; };
+
+  // Zoom slider
+  const slider = document.getElementById('cropZoom');
+  slider.oninput = () => {
+    cropScale = parseFloat(slider.value);
+    document.getElementById('cropZoomVal').textContent = cropScale.toFixed(1) + '×';
+    cropDraw();
+  };
+}
+
+function openCropEditor(img) {
+  cropImage = img;
+  cropOffX = 0; cropOffY = 0; cropScale = 1;
+
+  // Auto-fit: scale so the shorter side fills the circle
+  const fitW = (CROP_SIZE * 0.9) / img.naturalWidth;
+  const fitH = (CROP_SIZE * 0.9) / img.naturalHeight;
+  cropScale = Math.max(fitW, fitH);
+  cropScale = Math.min(Math.max(cropScale, 0.5), 3);
+
+  const slider = document.getElementById('cropZoom');
+  slider.value = cropScale;
+  document.getElementById('cropZoomVal').textContent = cropScale.toFixed(1) + '×';
+
+  document.getElementById('avatarUploadZone').style.display = 'none';
+  document.getElementById('cropEditor').classList.add('show');
+  cropDraw();
+}
+
+window.cancelCrop = function() {
+  document.getElementById('cropEditor').classList.remove('show');
+  document.getElementById('avatarUploadZone').style.display = '';
+  document.getElementById('avatarFileInput').value = '';
+  // If no avatar yet keep upload zone in initial state; if already have one keep preview
+  if (!currentProfile?.avatar_url) {
+    document.getElementById('avatarUploadContent').style.display = 'block';
+    document.getElementById('avatarPreviewContent').style.display = 'none';
+  }
+};
+
+window.applyCrop = function() {
+  // Render circular crop to a 256×256 canvas
+  const out = document.createElement('canvas');
+  out.width = 256; out.height = 256;
+  const ctx = out.getContext('2d');
+
+  // Clip circle
+  ctx.beginPath();
+  ctx.arc(128, 128, 128, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Draw scaled image centered
+  const iw = cropImage.naturalWidth  * cropScale;
+  const ih = cropImage.naturalHeight * cropScale;
+  // Map from 240px canvas space to 256px output
+  const ratio = 256 / CROP_SIZE;
+  const cx = 128 + cropOffX * ratio;
+  const cy = 128 + cropOffY * ratio;
+  ctx.drawImage(cropImage, cx - iw*ratio/2, cy - ih*ratio/2, iw*ratio, ih*ratio);
+
+  // Convert to blob → set as selectedAvatarFile
+  out.toBlob(blob => {
+    selectedAvatarFile = new File([blob], 'avatar.png', { type: 'image/png' });
+
+    // Update preview in upload zone
+    const dataUrl = out.toDataURL('image/png');
+    document.getElementById('avatarPreviewImg').src = dataUrl;
+    document.getElementById('avatarUploadContent').style.display  = 'none';
+    document.getElementById('avatarPreviewContent').style.display = 'block';
+
+    // Live update preview avatar in modal header
+    const av = document.getElementById('previewAvatar');
+    av.style.background = 'transparent';
+    av.innerHTML = `<img src="${dataUrl}" alt="preview" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+
+    // Hide cropper, show upload zone with preview
+    document.getElementById('cropEditor').classList.remove('show');
+    document.getElementById('avatarUploadZone').style.display = '';
+  }, 'image/png');
+};
+
 function resetAvatarUploadUI(avatarUrl) {
-  const zone     = document.getElementById('avatarUploadZone');
-  const initial  = document.getElementById('avatarUploadContent');
-  const preview  = document.getElementById('avatarPreviewContent');
+  const zone       = document.getElementById('avatarUploadZone');
+  const initial    = document.getElementById('avatarUploadContent');
+  const preview    = document.getElementById('avatarPreviewContent');
   const previewImg = document.getElementById('avatarPreviewImg');
+
+  document.getElementById('cropEditor').classList.remove('show');
+  zone.style.display = '';
 
   if (avatarUrl) {
     previewImg.src = avatarUrl;
@@ -887,35 +1090,31 @@ function resetAvatarUploadUI(avatarUrl) {
   }
 
   // Drag & drop
-  zone.ondragover = e => { e.preventDefault(); zone.classList.add('drag-over'); };
+  zone.ondragover  = e => { e.preventDefault(); zone.classList.add('drag-over'); };
   zone.ondragleave = () => zone.classList.remove('drag-over');
-  zone.ondrop = e => {
+  zone.ondrop      = e => {
     e.preventDefault(); zone.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
-    if (file) applyAvatarFile(file);
+    if (file) loadFileForCrop(file);
   };
 }
 
-function applyAvatarFile(file) {
+function loadFileForCrop(file) {
   if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-  if (file.size > 2*1024*1024) { alert('Max 2MB'); return; }
-  selectedAvatarFile = file;
+  if (file.size > 5*1024*1024) { alert('Max 5MB'); return; }
   const reader = new FileReader();
   reader.onload = ev => {
-    document.getElementById('avatarPreviewImg').src = ev.target.result;
-    document.getElementById('avatarPreviewContent').style.display = 'block';
-    document.getElementById('avatarUploadContent').style.display  = 'none';
-    // live update preview avatar in modal
-    const av = document.getElementById('previewAvatar');
-    av.style.background = 'transparent';
-    av.innerHTML = `<img src="${ev.target.result}" alt="preview" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+    const img = new Image();
+    img.onload = () => openCropEditor(img);
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
 window.handleAvatarSelect = function(e) {
   const file = e.target.files[0];
-  if (file) applyAvatarFile(file);
+  if (file) loadFileForCrop(file);
+  e.target.value = '';
 };
 
 window.openProfile = function() {
@@ -927,12 +1126,15 @@ window.openProfile = function() {
   setAvatarEl(av, avatarUrl, color, uname[0].toUpperCase());
   document.getElementById('previewName').textContent = uname;
   document.getElementById('profileSaveMsg').textContent = '';
-  document.getElementById('avatarFileInput').value = '';
   resetAvatarUploadUI(avatarUrl);
+  initCropEvents();
   document.getElementById('profileModal').classList.add('open');
 };
 
 window.closeProfile = function() {
+  cropDragging = false;
+  document.onmousemove = null;
+  document.onmouseup   = null;
   document.getElementById('profileModal').classList.remove('open');
 };
 
@@ -940,19 +1142,17 @@ window.saveProfile = async function() {
   const btn = document.getElementById('profileSaveBtn');
   const msg = document.getElementById('profileSaveMsg');
   if (!selectedAvatarFile) {
-    msg.textContent = '// No new image selected';
+    msg.textContent = '// Select and crop an image first';
     msg.style.color = 'var(--text-dim)';
     return;
   }
   btn.disabled = true; btn.textContent = '[ UPLOADING... ]';
   msg.textContent = ''; msg.style.color = 'var(--green)';
 
-  // Upload to Supabase Storage bucket: avatars
-  const ext = selectedAvatarFile.name.split('.').pop() || 'jpg';
-  const path = `${currentUser.id}/avatar.${ext}`;
+  const path = `${currentUser.id}/avatar.png`;
   const { error: upErr } = await supabase.storage
     .from('avatars')
-    .upload(path, selectedAvatarFile, { upsert: true, contentType: selectedAvatarFile.type });
+    .upload(path, selectedAvatarFile, { upsert: true, contentType: 'image/png' });
 
   if (upErr) {
     msg.textContent = '// Upload error: ' + upErr.message;
@@ -961,11 +1161,9 @@ window.saveProfile = async function() {
     return;
   }
 
-  // Get public URL (add cache-bust so browsers reload it)
   const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
   const avatarUrl = urlData.publicUrl + '?v=' + Date.now();
 
-  // Update profile row
   const { error: dbErr } = await supabase.from('profiles')
     .update({ avatar_url: avatarUrl })
     .eq('id', currentUser.id);
