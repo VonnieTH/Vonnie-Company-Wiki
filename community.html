@@ -315,6 +315,10 @@
 .comm-loading-fill{height:100%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:loadingPulse 1.2s ease infinite;}
 @keyframes loadingPulse{0%{width:0%}50%{width:70%}100%{width:100%}}
 
+.unread-divider{display:flex;align-items:center;gap:10px;margin:12px 0 8px;font-family:var(--mono);font-size:9px;color:#ff6b6b;letter-spacing:.12em;}
+.unread-divider::before,.unread-divider::after{content:"";flex:1;height:1px;background:rgba(255,107,107,.3);}
+.new-msg-toast{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--cyan-border);box-shadow:0 4px 16px rgba(0,0,0,.6);font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.08em;padding:6px 14px;cursor:pointer;z-index:400;white-space:nowrap;animation:fadeUp .2s ease;}
+.new-msg-toast:hover{background:var(--cyan-dim);}
 @media(max-width:600px){
   .comm-sidebar{width:48px;}
   .sidebar-tab{font-size:7px;padding:6px 2px;}
@@ -324,8 +328,6 @@
   .online-user-name{display:none;}
   .server-stat-val{font-size:14px;}
   .emoji-picker{left:0;width:260px;}
-  .date-sep{display:flex;align-items:center;gap:10px;margin:14px 0 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.12em;}
-  .date-sep::before,.date-sep::after{content:"";flex:1;height:1px;background:rgba(0,212,255,.1);}
 }
 </style>
 </head>
@@ -914,15 +916,41 @@ async function loadMessages() {
     }catch(e){}
   }
 
+    const lastSeen = getLastSeen(currentRoomId);
+    let firstUnreadEl = null;
+
   data.forEach(msg=>{
     msg.profiles=profileMap[msg.user_id]||null;
     msg.userBadges=badgeMap[msg.user_id]||[];
     msg.reactions=reactionMap[msg.id]||[];
     msg.replyMsg=replyMap[msg.reply_to]||null;
     msg.replyProf=msg.replyMsg?(profileMap[msg.replyMsg.user_id]||null):null;
-    renderMessage(msg);
+    const isUnread = lastSeen && new Date(msg.created_at) > new Date(lastSeen) && msg.user_id !== currentUser?.id;
+    renderMessage(msg, false, isUnread && !firstUnreadEl);
+    if (isUnread && !firstUnreadEl) {
+      firstUnreadEl = container.querySelector('.msg-group:last-child');
+    }
   });
-  scrollToBottom();
+
+  // Mark last seen
+  saveLastSeen(currentRoomId);
+
+  setTimeout(() => {
+    if (firstUnreadEl) {
+      // Insert unread divider before first unread
+      const divider = document.createElement('div');
+      divider.className = 'unread-divider';
+      divider.id = 'unread-anchor';
+      divider.innerHTML = '<span>— New messages —</span>';
+      firstUnreadEl.parentNode.insertBefore(divider, firstUnreadEl);
+      firstUnreadEl.scrollIntoView({ block: 'start', behavior: 'instant' });
+      // Scroll up a bit so divider is visible
+      const c = document.getElementById('commMessages');
+      c.scrollTop -= 40;
+    } else {
+      scrollToBottom();
+    }
+  }, 60);
 }
 
 function badgePills(badgeIds){
@@ -932,7 +960,7 @@ function badgePills(badgeIds){
   }).join('');
 }
 
-function renderMessage(msg) {
+function renderMessage(msg, prepend=false, isFirstUnread=false) {
   const container=document.getElementById('commMessages');
   const empty=document.getElementById('commEmpty');
   if(empty) empty.remove();
@@ -966,7 +994,7 @@ function renderMessage(msg) {
   let html=`${replyHtml}<div class="msg-header">
     <div class="msg-avatar" style="${avatarStyle}" onclick="viewProfile('${msg.user_id}')">${avatarInner}</div>
     <span class="msg-username" onclick="viewProfile('${msg.user_id}')">${escHtml(username)}</span>
-    <span class="msg-time" title="${dateStr}">${time} · ${dateStr}</span>    <div class="msg-badges">${badgePills(msg.userBadges)}</div>
+    <span class="msg-time">${time} · ${dateStr}</span>    <div class="msg-badges">${badgePills(msg.userBadges)}</div>
     <div class="msg-actions">${reactBtn}${replyBtn}${delBtn}</div>
   </div>`;
   if(msg.content) html+=`<div class="msg-bubble${isOwn?' own':''}">${formatText(msg.content)}</div>`;
@@ -1039,7 +1067,9 @@ function subscribeRealtime() {
           }catch(e){}
         }
         renderMessage({...payload.new,profiles:profile||null,userBadges:badgeIds,reactions:[],replyMsg,replyProf});
-        scrollToBottom();
+        saveLastSeen(currentRoomId);
+        if(isNearBottom()) scrollToBottom();
+        else showNewMsgToast();
       })
     // Reaction added
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions'},
@@ -1473,7 +1503,38 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ============================================================
+//  LAST SEEN (localStorage per room)
+// ============================================================
+function getLastSeen(roomId) {
+  try { return localStorage.getItem('lastSeen_' + roomId); } catch(e) { return null; }
+}
+function saveLastSeen(roomId) {
+  try { localStorage.setItem('lastSeen_' + roomId, new Date().toISOString()); } catch(e) {}
+}
+
+// Auto-scroll to bottom when new message arrives (if user is near bottom)
+function isNearBottom() {
+  const c = document.getElementById('commMessages');
+  return c.scrollHeight - c.scrollTop - c.clientHeight < 120;
+}
+
 init();
+
+function showNewMsgToast() {
+  let toast = document.getElementById('newMsgToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'newMsgToast';
+    toast.className = 'new-msg-toast';
+    toast.innerHTML = '↓ New message';
+    toast.onclick = () => { scrollToBottom(); toast.remove(); };
+    document.querySelector('.comm-chat').appendChild(toast);
+  }
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.remove(), 5000);
+}
+
 </script>
 </body>
 </html>
