@@ -598,10 +598,19 @@ import { supabase, signIn, signUp, signOut, getSession, getProfile, BADGE_CATALO
 
 // Badge functions defined here to use the same supabase instance
 async function grantBadge(userId, badgeId) {
+  // Check first to avoid RLS upsert issue (upsert needs SELECT + INSERT policy)
+  const { data: existing } = await supabase
+    .from('user_badges')
+    .select('badge_id')
+    .eq('user_id', userId)
+    .eq('badge_id', badgeId)
+    .maybeSingle();
+  if (existing) return; // already have it, skip
   const { error } = await supabase
     .from('user_badges')
-    .upsert({ user_id: userId, badge_id: badgeId }, { onConflict: 'user_id,badge_id' });
-  if (error) console.warn('grantBadge error:', error.message);
+    .insert({ user_id: userId, badge_id: badgeId });
+  if (error && error.code !== '23505') // 23505 = unique violation (already exists)
+    console.warn('grantBadge error:', error.message);
 }
 async function ensureLoginBadges(userId) {
   await grantBadge(userId, 'member');
@@ -1014,23 +1023,26 @@ function renderMessage(msg, prepend=false, isFirstUnread=false) {
   let html=`${replyHtml}<div class="msg-header">
     <div class="msg-avatar" style="${avatarStyle}" onclick="viewProfile('${msg.user_id}')">${avatarInner}</div>
     <span class="msg-username" onclick="viewProfile('${msg.user_id}')">${escHtml(username)}</span>
-    <span class="msg-time">${time} · ${dateStr}</span>    <div class="msg-badges">${badgePills(msg.userBadges)}</div>
+    <span class="msg-time">${time}</span>
     <div class="msg-actions">${reactBtn}${replyBtn}${delBtn}</div>
   </div>`;
   if(msg.content) html+=`<div class="msg-bubble${isOwn?' own':''}">${formatText(msg.content)}</div>`;
   if(msg.image_url) html+=`<img class="msg-img" src="${msg.image_url}" alt="image" onclick="openLightbox('${msg.image_url}')">`;
-  // Reactions area
   html+=`<div class="msg-reactions" id="reactions-${msg.id}"></div>`;
-  const _sep=container.querySelector('.date-sep:last-of-type');
-  if(!_sep||_sep.dataset.date!==dateStr){
-    const sep=document.createElement('div');
-    sep.className='date-sep'; sep.dataset.date=dateStr;
-    sep.innerHTML=`<span>${dateStr}</span>`;
+
+  // Date separator — append BEFORE the group, check existing seps properly
+  const existingSeps = container.querySelectorAll('.date-sep');
+  const lastSep = existingSeps[existingSeps.length - 1];
+  if (!lastSep || lastSep.dataset.date !== dateStr) {
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.dataset.date = dateStr;
+    sep.innerHTML = `<span>${dateStr}</span>`;
     container.appendChild(sep);
   }
-  group.innerHTML=html;
+
+  group.innerHTML = html;
   container.appendChild(group);
-  // Render reaction pills
   renderReactionPills(msg.id, msg.reactions||[]);
 }
 
