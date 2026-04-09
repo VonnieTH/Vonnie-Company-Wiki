@@ -336,6 +336,66 @@
   .server-stat-val{font-size:14px;}
   .emoji-picker{left:0;width:260px;}
 }
+
+/* ======= MSG ANIMATION ======= */
+@keyframes msgSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg-group.animate-in{animation:msgSlideIn .22s ease both;}
+
+/* ======= SEARCH ======= */
+.search-overlay{display:none;position:absolute;top:0;left:0;right:0;z-index:300;background:var(--bg-panel);border-bottom:1px solid var(--cyan-border);box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.search-overlay.open{display:block;}
+.search-inner{display:flex;align-items:center;gap:10px;padding:9px 18px;}
+.search-input{flex:1;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.3);padding:7px 12px;font-family:var(--mono);font-size:12px;color:var(--text-main);outline:none;caret-color:var(--cyan);transition:border-color .15s;}
+.search-input:focus{border-color:var(--cyan);}
+.search-input::placeholder{color:var(--text-dim);}
+.search-count{font-family:var(--mono);font-size:9px;color:var(--text-dim);white-space:nowrap;letter-spacing:.08em;}
+.search-btn-hdr{background:none;border:1px solid rgba(0,212,255,.2);color:var(--text-dim);font-family:var(--mono);font-size:10px;padding:3px 9px;cursor:pointer;transition:all .15s;letter-spacing:.06em;}
+.search-btn-hdr:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+.msg-group.search-dim{opacity:.18;transition:opacity .15s;}
+.msg-group.search-match{outline:1px solid rgba(0,212,255,.3);background:rgba(0,212,255,.02);}
+
+/* ======= PIN BAR ======= */
+.pin-bar{display:none;padding:6px 18px;background:rgba(155,109,255,.05);border-bottom:1px solid rgba(155,109,255,.18);align-items:center;gap:8px;cursor:pointer;transition:background .15s;}
+.pin-bar.show{display:flex;}
+.pin-bar:hover{background:rgba(155,109,255,.1);}
+.pin-bar-icon{color:#9b6dff;font-size:10px;flex-shrink:0;}
+.pin-bar-text{font-family:var(--mono);font-size:10px;color:var(--text-sub);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pin-bar-user{color:#9b6dff;}
+.pin-bar-unpin{background:none;border:none;color:var(--text-dim);font-family:var(--mono);font-size:9px;cursor:pointer;padding:2px 6px;border:1px solid rgba(255,107,107,.2);transition:all .15s;flex-shrink:0;letter-spacing:.06em;}
+.pin-bar-unpin:hover{color:#ff6b6b;border-color:#ff6b6b;}
+.msg-action-btn.pin:hover{border-color:#9b6dff;color:#9b6dff;background:rgba(155,109,255,.08);}
+
+/* ======= ACHIEVEMENT TOAST ======= */
+@keyframes achieveIn{from{opacity:0;transform:translateX(70px)}to{opacity:1;transform:translateX(0)}}
+@keyframes achieveOut{to{opacity:0;transform:translateX(70px)}}
+.achievement-toast{position:fixed;top:68px;right:18px;z-index:9200;background:var(--bg-card);border:1px solid var(--cyan-border);box-shadow:0 0 30px var(--cyan-glow);padding:14px 16px;font-family:var(--mono);min-width:230px;max-width:290px;display:none;gap:12px;align-items:center;}
+.achievement-toast.show{display:flex;animation:achieveIn .35s cubic-bezier(.34,1.56,.64,1) both;}
+.achievement-toast.hide{animation:achieveOut .28s ease forwards;}
+.achiev-icon{font-size:28px;flex-shrink:0;}
+.achiev-info{flex:1;}
+.achiev-label{font-size:8px;color:var(--text-dim);letter-spacing:.16em;margin-bottom:3px;}
+.achiev-name{font-size:13px;letter-spacing:.04em;}
+.achiev-desc{font-size:9px;color:var(--text-dim);margin-top:2px;line-height:1.5;}
+
+/* ======= THREAD MODAL ======= */
+.thread-overlay{display:none;position:fixed;inset:0;z-index:9300;background:rgba(0,0,0,.86);}
+.thread-overlay.open{display:flex;align-items:center;justify-content:center;animation:fadeUp .18s ease both;}
+.thread-box{width:500px;max-width:95vw;max-height:82vh;background:var(--bg-card);border:1px solid var(--cyan-border);box-shadow:0 0 40px var(--cyan-glow);display:flex;flex-direction:column;position:relative;}
+.thread-box::before,.thread-box::after{content:"";position:absolute;width:8px;height:8px;border-color:var(--cyan);border-style:solid;pointer-events:none;}
+.thread-box::before{top:-1px;left:-1px;border-width:2px 0 0 2px;}
+.thread-box::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
+.thread-header{background:rgba(0,212,255,.07);border-bottom:1px solid rgba(0,212,255,.2);padding:8px 16px;font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.12em;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.thread-close-btn{background:none;border:none;color:var(--text-sub);font-family:var(--mono);font-size:11px;cursor:pointer;transition:color .15s;}
+.thread-close-btn:hover{color:var(--cyan);}
+.thread-parent{padding:12px 16px;border-bottom:1px solid rgba(0,212,255,.1);background:rgba(0,212,255,.02);flex-shrink:0;}
+.thread-reply-count{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.12em;padding:6px 16px;border-bottom:1px solid rgba(0,212,255,.07);flex-shrink:0;}
+.thread-messages{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:10px;}
+.thread-messages::-webkit-scrollbar{width:3px;}
+.thread-messages::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);}
+.thread-msg{padding-bottom:6px;border-bottom:1px solid rgba(0,212,255,.05);}
+.thread-msg:last-child{border-bottom:none;}
+.thread-btn{display:inline-flex;align-items:center;gap:5px;margin-left:36px;margin-top:4px;background:none;border:1px solid rgba(0,212,255,.15);color:var(--text-dim);font-family:var(--mono);font-size:9px;cursor:pointer;padding:2px 8px;letter-spacing:.06em;transition:all .15s;border-radius:2px;}
+.thread-btn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
 </style>
 </head>
 <body>
@@ -428,10 +488,27 @@
       <div class="comm-chat-header">
         <span class="comm-chat-room-name" id="chatRoomName">#general</span>
         <span>— VonnieStudio Community</span>
+        <button class="search-btn-hdr" onclick="openSearch()" title="Search messages">🔍 SEARCH</button>
         <div class="rt-status" id="rtStatus">
           <div class="rt-status-dot" id="rtStatusDot"></div>
           <span class="rt-status-txt" id="rtStatusTxt">CONNECTING...</span>
         </div>
+      </div>
+      <!-- SEARCH OVERLAY -->
+      <div class="search-overlay" id="searchOverlay">
+        <div class="search-inner">
+          <i class="fa-solid fa-magnifying-glass" style="color:var(--cyan);font-size:11px;flex-shrink:0;"></i>
+          <input class="search-input" id="searchInput" placeholder="Search messages..." autocomplete="off"
+            oninput="performSearch(this.value)" onkeydown="if(event.key==='Escape')closeSearch()">
+          <span class="search-count" id="searchCount"></span>
+          <button class="search-btn-hdr" onclick="closeSearch()">[ ✕ ]</button>
+        </div>
+      </div>
+      <!-- PIN BAR -->
+      <div class="pin-bar" id="pinBar" onclick="scrollToPinned()">
+        <i class="fa-solid fa-thumbtack pin-bar-icon"></i>
+        <span class="pin-bar-text" id="pinBarText"></span>
+        <button class="pin-bar-unpin" onclick="event.stopPropagation();unpinMessage()">[ UNPIN ]</button>
       </div>
       <div class="img-preview-wrap" id="imgPreviewWrap">
         <img class="img-preview-thumb" id="imgPreviewThumb" src="" alt="">
@@ -476,7 +553,30 @@
   </div>
 </div>
 
-<!-- LIGHTBOX -->
+<!-- ACHIEVEMENT TOAST -->
+<div class="achievement-toast" id="achievementToast">
+  <div class="achiev-icon" id="achievIcon">🏆</div>
+  <div class="achiev-info">
+    <div class="achiev-label">// BADGE UNLOCKED</div>
+    <div class="achiev-name" id="achievName"></div>
+    <div class="achiev-desc" id="achievDesc"></div>
+  </div>
+</div>
+
+<!-- THREAD MODAL -->
+<div class="thread-overlay" id="threadOverlay" onclick="if(event.target===this)closeThread()">
+  <div class="thread-box">
+    <div class="thread-header">
+      <span>// THREAD</span>
+      <button class="thread-close-btn" onclick="closeThread()">[ X ]</button>
+    </div>
+    <div class="thread-parent" id="threadParent"></div>
+    <div class="thread-reply-count" id="threadCount">// 0 REPLIES</div>
+    <div class="thread-messages" id="threadMessages"></div>
+  </div>
+</div>
+
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">[ ✕ CLOSE ]</button>
   <img id="lightboxImg" src="" alt="">
@@ -622,6 +722,251 @@ async function ensureLoginBadges(userId) {
 }
 
 // ============================================================
+//  🔔 NOTIFICATIONS + SOUND
+// ============================================================
+let notifEnabled = false;
+let unreadCount = 0;
+const originalTitle = document.title;
+
+async function initNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') { notifEnabled = true; return; }
+  if (Notification.permission !== 'denied') {
+    const p = await Notification.requestPermission();
+    notifEnabled = p === 'granted';
+  }
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 820; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(); osc.stop(ctx.currentTime + 0.25);
+  } catch(e) {}
+}
+
+function triggerNotification(username, text) {
+  if (document.hidden) {
+    unreadCount++;
+    document.title = `(${unreadCount}) ${originalTitle}`;
+  }
+  playBeep();
+  if (notifEnabled && document.hidden) {
+    try {
+      new Notification(`${username} — VonnieStudio`, {
+        body: text ? text.substring(0, 80) : '📷 Sent an image',
+        icon: '/FSP_Logo.png',
+        tag: 'vs-community',
+      });
+    } catch(e) {}
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { unreadCount = 0; document.title = originalTitle; }
+});
+
+// ============================================================
+//  🔍 SEARCH
+// ============================================================
+window.openSearch = function() {
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchInput').focus(), 60);
+};
+window.closeSearch = function() {
+  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchCount').textContent = '';
+  document.querySelectorAll('.msg-group').forEach(el => el.classList.remove('search-dim','search-match'));
+};
+window.performSearch = function(query) {
+  query = query.trim().toLowerCase();
+  const groups = document.querySelectorAll('.msg-group');
+  if (!query) {
+    groups.forEach(el => el.classList.remove('search-dim','search-match'));
+    document.getElementById('searchCount').textContent = '';
+    return;
+  }
+  let matches = 0;
+  groups.forEach(el => {
+    const text = (el.querySelector('.msg-bubble')?.textContent || '').toLowerCase();
+    const user = (el.querySelector('.msg-username')?.textContent || '').toLowerCase();
+    if (text.includes(query) || user.includes(query)) {
+      el.classList.remove('search-dim'); el.classList.add('search-match'); matches++;
+    } else {
+      el.classList.add('search-dim'); el.classList.remove('search-match');
+    }
+  });
+  document.getElementById('searchCount').textContent = matches
+    ? `${matches} result${matches > 1 ? 's' : ''}` : 'No results';
+};
+
+// ============================================================
+//  📌 PIN MESSAGE
+// ============================================================
+window.pinMessage = async function(msgId) {
+  try {
+    await supabase.from('pinned_messages')
+      .upsert({ room_id: currentRoomId, message_id: msgId, pinned_by: currentUser.id },
+               { onConflict: 'room_id' });
+    await loadPinnedMessage(currentRoomId);
+  } catch(e) {
+    console.warn('Pin error (make sure pinned_messages table exists):', e);
+  }
+};
+window.unpinMessage = async function() {
+  try {
+    await supabase.from('pinned_messages').delete().eq('room_id', currentRoomId);
+    document.getElementById('pinBar').classList.remove('show');
+  } catch(e) {}
+};
+window.scrollToPinned = function() {
+  const bar = document.getElementById('pinBar');
+  if (!bar._msgId) return;
+  const el = document.querySelector(`[data-msg-id="${bar._msgId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.outline = '1px solid #9b6dff';
+    setTimeout(() => { el.style.outline = ''; }, 1600);
+  }
+};
+async function loadPinnedMessage(roomId) {
+  try {
+    const { data } = await supabase
+      .from('pinned_messages')
+      .select('message_id, messages(id, content, user_id, profiles(username))')
+      .eq('room_id', roomId)
+      .maybeSingle();
+    if (data?.messages) {
+      const bar = document.getElementById('pinBar');
+      const uname = data.messages.profiles?.username || 'unknown';
+      const text = data.messages.content || '📷 Image';
+      document.getElementById('pinBarText').innerHTML =
+        `<span class="pin-bar-user">${escHtml(uname)}</span>: ${escHtml(text.substring(0, 90))}`;
+      bar._msgId = data.messages.id;
+      bar.classList.add('show');
+    } else {
+      document.getElementById('pinBar').classList.remove('show');
+    }
+  } catch(e) {
+    document.getElementById('pinBar').classList.remove('show');
+  }
+}
+
+// ============================================================
+//  🎖️ ACHIEVEMENT BADGES
+// ============================================================
+async function checkMessageBadges(userId, hasImage) {
+  try {
+    const { count: msgCount } = await supabase
+      .from('messages').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+    const { count: imgCount } = await supabase
+      .from('messages').select('*', { count: 'exact', head: true })
+      .eq('user_id', userId).not('image_url', 'is', null);
+
+    const milestones = [
+      { badge: 'first_message', cond: msgCount >= 1 },
+      { badge: 'chatter',       cond: msgCount >= 10 },
+      { badge: 'veteran',       cond: msgCount >= 50 },
+      { badge: 'image_sender',  cond: imgCount >= 1 },
+    ];
+    for (const { badge, cond } of milestones) {
+      if (!cond) continue;
+      const { data: ex } = await supabase.from('user_badges')
+        .select('badge_id').eq('user_id', userId).eq('badge_id', badge).maybeSingle();
+      if (!ex) {
+        await supabase.from('user_badges').insert({ user_id: userId, badge_id: badge });
+        showAchievementToast(badge);
+        break; // show one at a time
+      }
+    }
+  } catch(e) {}
+}
+
+function showAchievementToast(badgeId) {
+  const cat = BADGE_CATALOG[badgeId]; if (!cat) return;
+  const toast = document.getElementById('achievementToast');
+  document.getElementById('achievIcon').textContent = cat.icon;
+  document.getElementById('achievName').style.color = cat.color;
+  document.getElementById('achievName').textContent = cat.label;
+  document.getElementById('achievDesc').textContent = cat.desc;
+  toast.classList.remove('hide');
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.classList.remove('show', 'hide'), 350);
+  }, 4500);
+}
+
+// ============================================================
+//  💬 THREAD VIEW
+// ============================================================
+window.openThread = async function(msgId) {
+  const group = document.querySelector(`[data-msg-id="${msgId}"]`);
+  if (!group) return;
+  // Render parent message summary in thread header
+  const parentBubble = group.querySelector('.msg-bubble');
+  const parentUser = group.querySelector('.msg-username');
+  const parentAvatar = group.querySelector('.msg-avatar');
+  document.getElementById('threadParent').innerHTML =
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      ${parentAvatar ? parentAvatar.outerHTML : ''}
+      <span class="msg-username">${parentUser?.textContent || ''}</span>
+    </div>
+    ${parentBubble ? `<div class="msg-bubble" style="margin-left:0;">${parentBubble.innerHTML}</div>` : ''}`;
+  document.getElementById('threadOverlay').classList.add('open');
+  await loadThreadReplies(msgId);
+};
+window.closeThread = function() {
+  document.getElementById('threadOverlay').classList.remove('open');
+};
+async function loadThreadReplies(parentId) {
+  const container = document.getElementById('threadMessages');
+  container.innerHTML = `<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-align:center;padding:16px;">// Loading...</div>`;
+  const { data } = await supabase.from('messages').select('*')
+    .eq('reply_to', parentId).order('created_at', { ascending: true });
+  document.getElementById('threadCount').textContent = `// ${data?.length || 0} REPL${(data?.length || 0) === 1 ? 'Y' : 'IES'}`;
+  container.innerHTML = '';
+  if (!data?.length) {
+    container.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;padding:24px;">// No replies yet</div>`;
+    return;
+  }
+  const uids = [...new Set(data.map(m => m.user_id))];
+  const { data: profs } = await supabase.from('profiles').select('id,username,avatar_color,avatar_url').in('id', uids);
+  const pm = {}; (profs||[]).forEach(p => { pm[p.id] = p; });
+  data.forEach(msg => {
+    const p = pm[msg.user_id] || {};
+    const uname = p.username || 'unknown';
+    const color = p.avatar_color || '#00d4ff';
+    const _d = new Date(msg.created_at);
+    const time = `${String(_d.getHours()).padStart(2,'0')}:${String(_d.getMinutes()).padStart(2,'0')}`;
+    const avInner = p.avatar_url
+      ? `<img src="${p.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+      : uname[0].toUpperCase();
+    const avStyle = p.avatar_url ? 'background:transparent;' : `background:${color};`;
+    const div = document.createElement('div');
+    div.className = 'thread-msg';
+    div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div class="msg-avatar" style="${avStyle}cursor:pointer;" onclick="viewProfile('${msg.user_id}')">${avInner}</div>
+      <span class="msg-username" style="cursor:pointer;" onclick="viewProfile('${msg.user_id}')">${escHtml(uname)}</span>
+      <span class="msg-time">${time}</span>
+    </div>
+    ${msg.content ? `<div class="msg-bubble" style="margin-left:36px;">${formatText(msg.content)}</div>` : ''}
+    ${msg.image_url ? `<img class="msg-img" src="${msg.image_url}" alt="" onclick="openLightbox('${msg.image_url}')">` : ''}`;
+    container.appendChild(div);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+
+
+// ============================================================
 //  EMOJI DATA
 // ============================================================
 const EMOJI_CATS = {
@@ -726,6 +1071,7 @@ async function showCommunity() {
   await loadRooms();
   await loadTotalMembers();
   initPresence();
+  initNotifications();
 }
 
 // ============================================================
@@ -904,8 +1250,10 @@ async function selectRoom(room,el,silent=false) {
   if(el) el.classList.add('active');
   if(!silent) document.getElementById('commMessages').innerHTML='';
   cancelReply();
+  closeSearch();
   await loadMessages();
   subscribeRealtime();
+  loadPinnedMessage(room.id);
 }
 
 // ============================================================
@@ -951,6 +1299,10 @@ async function loadMessages() {
     }catch(e){}
   }
 
+  // Reply counts (how many messages reply_to each msg in this batch)
+  const replyCountMap={};
+  data.forEach(m=>{if(m.reply_to) replyCountMap[m.reply_to]=(replyCountMap[m.reply_to]||0)+1;});
+
     const lastSeen = getLastSeen(currentRoomId);
     let firstUnreadEl = null;
 
@@ -963,6 +1315,7 @@ async function loadMessages() {
     msg.reactions=reactionMap[msg.id]||[];
     msg.replyMsg=replyMap[msg.reply_to]||null;
     msg.replyProf=msg.replyMsg?(profileMap[msg.replyMsg.user_id]||null):null;
+    msg.replyCount=replyCountMap[msg.id]||0;
     const isUnread = lastSeen && new Date(msg.created_at) > new Date(lastSeen) && msg.user_id !== currentUser?.id;
     renderMessage(msg, false, isUnread && !firstUnreadEl);
     if (isUnread && !firstUnreadEl) {
@@ -996,7 +1349,7 @@ function badgePills(badgeIds){
   }).join('');
 }
 
-function renderMessage(msg, prepend=false, isFirstUnread=false) {
+function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
   const container=document.getElementById('commMessages');
   const empty=document.getElementById('commEmpty');
   if(empty) empty.remove();
@@ -1028,7 +1381,7 @@ function renderMessage(msg, prepend=false, isFirstUnread=false) {
   const avatarStyle=avatarUrl?'background:transparent;':`background:${color};`;
 
   const group=document.createElement('div');
-  group.className='msg-group';
+  group.className='msg-group' + (animate ? ' animate-in' : '');
   group.dataset.msgId=msg.id;
 
   let replyHtml='';
@@ -1041,17 +1394,24 @@ function renderMessage(msg, prepend=false, isFirstUnread=false) {
   const safeContent=escHtml(msg.content||'').replace(/`/g,'\\`');
   const reactBtn=`<button class="msg-action-btn" onclick="openReactPicker(event,'${msg.id}')">😊 React</button>`;
   const replyBtn=`<button class="msg-action-btn" onclick="startReply('${msg.id}','${escHtml(username)}',\`${safeContent}\`)">↩ Reply</button>`;
+  const pinBtn=`<button class="msg-action-btn pin" onclick="pinMessage('${msg.id}')">📌 Pin</button>`;
   const delBtn=isOwn?`<button class="msg-action-btn del" onclick="deleteMessage('${msg.id}')">DEL</button>`:'';
 
   let html=`${replyHtml}<div class="msg-header">
     <div class="msg-avatar" style="${avatarStyle}" onclick="viewProfile('${msg.user_id}')">${avatarInner}</div>
     <span class="msg-username" onclick="viewProfile('${msg.user_id}')">${escHtml(username)}</span>
     <span class="msg-time">${time}</span>
-    <div class="msg-actions">${reactBtn}${replyBtn}${delBtn}</div>
+    <div class="msg-actions">${reactBtn}${replyBtn}${pinBtn}${delBtn}</div>
   </div>`;
   if(msg.content) html+=`<div class="msg-bubble${isOwn?' own':''}">${formatText(msg.content)}</div>`;
   if(msg.image_url) html+=`<img class="msg-img" src="${msg.image_url}" alt="image" onclick="openLightbox('${msg.image_url}')">`;
   html+=`<div class="msg-reactions" id="reactions-${msg.id}"></div>`;
+
+  // Thread button — show if message has replies
+  const replyCount = msg.replyCount || 0;
+  if (replyCount > 0) {
+    html += `<button class="thread-btn" onclick="openThread('${msg.id}')">💬 ${replyCount} ${replyCount===1?'reply':'replies'}</button>`;
+  }
 
   // Date separator — insert BEFORE the group if date changed
   const existingSeps = container.querySelectorAll('.date-sep');
@@ -1165,6 +1525,7 @@ function subscribeRealtime() {
         // Re-check after all async ops — optimistic render may have already added the element
         if (document.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
 
+        const isOthers = payload.new.user_id !== currentUser?.id;
         renderMessage({
           ...payload.new,
           profiles:   profile || null,
@@ -1172,8 +1533,10 @@ function subscribeRealtime() {
           reactions:  [],
           replyMsg,
           replyProf,
-        });
+          replyCount: 0,
+        }, false, false, true); // animate=true for new incoming messages
         saveLastSeen(roomId);
+        if (isOthers) triggerNotification(profile?.username || 'Someone', payload.new.content);
         if (isNearBottom()) scrollToBottom();
         else showNewMsgToast();
       })
@@ -1243,8 +1606,10 @@ window.sendMessage = async function() {
         if(rm){const {data:rp}=await supabase.from('profiles').select('username').eq('id',rm.user_id).single();replyProf=rp;}
       }catch(e){}
     }
-    renderMessage({...inserted,profiles:currentProfile,userBadges:badges.map(b=>b.badge_id),reactions:[],replyMsg,replyProf});
+    renderMessage({...inserted,profiles:currentProfile,userBadges:badges.map(b=>b.badge_id),reactions:[],replyMsg,replyProf,replyCount:0}, false, false, true);
     scrollToBottom();
+    // Check for new achievement badges (fire & forget)
+    checkMessageBadges(currentUser.id, !!image_url);
   }
   input.value=''; input.style.height='auto';
   document.getElementById('charCounter').textContent='';
@@ -1615,7 +1980,7 @@ function resetAvatarUploadUI(avatarUrl){
 // ============================================================
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    closeLightbox();closeProfileView();closeProfileEdit();cancelReply();closeReactPicker();
+    closeLightbox();closeProfileView();closeProfileEdit();cancelReply();closeReactPicker();closeThread();closeSearch();
     document.getElementById('emojiPicker').classList.remove('open');emojiPickerOpen=false;
   }
 });
