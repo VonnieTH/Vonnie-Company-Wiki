@@ -104,7 +104,7 @@
 .date-sep span{white-space:nowrap;padding:0 4px;}
 .msg-badges{display:flex;gap:3px;align-items:center;}
 .msg-badge-pill{font-family:var(--mono);font-size:8px;padding:1px 5px;border:1px solid;border-radius:2px;letter-spacing:.06em;white-space:nowrap;}
-.msg-bubble{font-family:var(--mono);font-size:12px;color:var(--text-main);line-height:1.7;padding:6px 10px;margin-left:36px;background:rgba(0,212,255,.03);border-left:1px solid rgba(0,212,255,.1);word-break:break-word;white-space:pre-wrap;position:relative;}
+.msg-bubble{font-family:var(--mono);font-size:13px;color:var(--text-main);line-height:1.7;padding:6px 10px;margin-left:36px;background:rgba(0,212,255,.03);border-left:1px solid rgba(0,212,255,.1);word-break:break-word;white-space:pre-wrap;position:relative;}
 .msg-bubble.own{background:rgba(0,212,255,.06);border-left-color:rgba(0,212,255,.3);}
 .msg-bubble strong{color:var(--text-main);font-weight:700;}
 .msg-bubble em{color:var(--text-sub);font-style:italic;}
@@ -954,6 +954,9 @@ async function loadMessages() {
     const lastSeen = getLastSeen(currentRoomId);
     let firstUnreadEl = null;
 
+  // Hide while rendering so user never sees scroll animate from top
+  container.style.visibility = 'hidden';
+
   data.forEach(msg=>{
     msg.profiles=profileMap[msg.user_id]||null;
     msg.userBadges=badgeMap[msg.user_id]||[];
@@ -970,22 +973,20 @@ async function loadMessages() {
   // Mark last seen
   saveLastSeen(currentRoomId);
 
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     if (firstUnreadEl) {
-      // Insert unread divider before first unread
       const divider = document.createElement('div');
       divider.className = 'unread-divider';
       divider.id = 'unread-anchor';
       divider.innerHTML = '<span>— New messages —</span>';
       firstUnreadEl.parentNode.insertBefore(divider, firstUnreadEl);
-      firstUnreadEl.scrollIntoView({ block: 'start', behavior: 'instant' });
-      // Scroll up a bit so divider is visible
       const c = document.getElementById('commMessages');
-      c.scrollTop -= 40;
+      c.scrollTop = divider.offsetTop - 60;
     } else {
       scrollToBottom();
     }
-  }, 60);
+    container.style.visibility = '';
+  });
 }
 
 function badgePills(badgeIds){
