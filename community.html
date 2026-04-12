@@ -1475,8 +1475,7 @@ async function selectRoom(room,el,silent=false) {
 // ============================================================
 async function loadMessages() {
   // Fetch the 100 MOST RECENT messages (desc), then reverse for chronological display
-  const {data:rawData}=await supabase.from('messages').select('*').eq('room_id',currentRoomId).order('created_at',{ascending:false}).limit(100);
-  const data = rawData ? [...rawData].reverse() : rawData;
+  const {data:rawData}=await supabase.from('messages').select('*').eq('room_id',currentRoomId).order('created_at',{ascending:false}).limit(100);  const data = rawData ? [...rawData].reverse() : rawData;
   const container=document.getElementById('commMessages');
   container.innerHTML='';
   if(!data||!data.length){
@@ -1524,13 +1523,16 @@ async function loadMessages() {
   container.style.visibility = 'hidden';
 
   data.forEach(msg=>{
-    msg.profiles=msg.is_vonnie ? { username:'Vonnie', avatar_color:'#9b6dff', avatar_url:null } : (profileMap[msg.user_id]||null);
-    msg.userBadges=msg.is_vonnie ? [] : (badgeMap[msg.user_id]||[]);
+    const isBotRow = !!msg.bot_name;
+    msg.profiles=msg.is_vonnie ? { username:'Vonnie', avatar_color:'#9b6dff', avatar_url:null }
+                : isBotRow     ? null
+                : (profileMap[msg.user_id]||null);
+    msg.userBadges=(msg.is_vonnie || isBotRow) ? [] : (badgeMap[msg.user_id]||[]);
     msg.reactions=reactionMap[msg.id]||[];
     msg.replyMsg=replyMap[msg.reply_to]||null;
     msg.replyProf=msg.replyMsg?(profileMap[msg.replyMsg.user_id]||null):null;
     msg.replyCount=replyCountMap[msg.id]||0;
-    const isUnread = lastSeen && new Date(msg.created_at) > new Date(lastSeen) && msg.user_id !== currentUser?.id;
+    const isUnread = lastSeen && new Date(msg.created_at) > new Date(lastSeen) && msg.user_id !== currentUser?.id && !isBotRow;
     renderMessage(msg, false, isUnread && !firstUnreadEl);
     if (isUnread && !firstUnreadEl) {
       firstUnreadEl = container.querySelector('.msg-group:last-child');
@@ -1573,16 +1575,20 @@ function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
 
   // ── Vonnie AI message — special rendering ─────────────────
   const isVonnie = msg.is_vonnie === true;
+  const isBotMsg = !!msg.bot_name; // bot reply from DB
   if (isVonnie) {
-    // Rebuild vonnie context from saved message
     msg.profiles = msg.profiles || { username: 'Vonnie', avatar_color: '#9b6dff', avatar_url: null };
   }
 
-  const isOwn=msg.user_id===currentUser?.id && !isVonnie;
-  const username=isVonnie ? 'Vonnie' : (msg.profiles?.username||'unknown');
-  const color=isVonnie ? '#9b6dff' : (msg.profiles?.avatar_color||'#00d4ff');
-  const avatarUrl=isVonnie ? null : (msg.profiles?.avatar_url||null);
-  const initial=isVonnie ? 'V' : username[0].toUpperCase();
+  const isOwn   = msg.user_id === currentUser?.id && !isVonnie && !isBotMsg;
+  const username = isVonnie ? 'Vonnie'
+                 : isBotMsg ? (msg.bot_name || 'VonnieBot')
+                 : (msg.profiles?.username || 'unknown');
+  const color    = isVonnie ? '#9b6dff'
+                 : isBotMsg ? 'rgba(0,212,255,.1)'
+                 : (msg.profiles?.avatar_color || '#00d4ff');
+  const avatarUrl = (isVonnie || isBotMsg) ? null : (msg.profiles?.avatar_url || null);
+  const initial   = isVonnie ? 'V' : isBotMsg ? '🤖' : username[0].toUpperCase();
   const _d=new Date(msg.created_at);
 
   // ── Time: always HH:MM (24h, no locale quirks) ──────────────
@@ -1603,9 +1609,11 @@ function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
   else if(dateKey===yestKey) dateLabel='Yesterday';
   else dateLabel=`${String(dd).padStart(2,'0')} ${MONTHS[mm]} ${yy}`;
   const avatarInner=avatarUrl?`<img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`:initial;
-  const avatarStyle=isVonnie
+  const avatarStyle = isVonnie
     ? 'background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;'
-    : (avatarUrl?'background:transparent;':`background:${color};`);
+    : isBotMsg
+    ? 'background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);font-size:15px;'
+    : (avatarUrl ? 'background:transparent;' : `background:${color};`);
 
   const group=document.createElement('div');
   group.className='msg-group' + (animate ? ' animate-in' : '');
@@ -1619,22 +1627,32 @@ function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
   }
 
   const safeContent=escHtml(msg.content||'').replace(/`/g,'\\`');
-  const reactBtn=`<button class="msg-action-btn" onclick="openReactPicker(event,'${msg.id}')">😊 React</button>`;
-  const replyBtn=isVonnie?'':`<button class="msg-action-btn" onclick="startReply('${msg.id}','${escHtml(username)}',\`${safeContent}\`)">↩ Reply</button>`;
-  const pinBtn=isVonnie?'':`<button class="msg-action-btn pin" onclick="pinMessage('${msg.id}')">📌 Pin</button>`;
-  const delBtn=(!isVonnie && isOwn)?`<button class="msg-action-btn del" onclick="deleteMessage('${msg.id}')">DEL</button>`:'';
+  const reactBtn = (isVonnie || isBotMsg) ? '' : `<button class="msg-action-btn" onclick="openReactPicker(event,'${msg.id}')">😊 React</button>`;
+  const replyBtn = (isVonnie || isBotMsg) ? '' : `<button class="msg-action-btn" onclick="startReply('${msg.id}','${escHtml(username)}',\`${safeContent}\`)">↩ Reply</button>`;
+  const pinBtn   = (isVonnie || isBotMsg) ? '' : `<button class="msg-action-btn pin" onclick="pinMessage('${msg.id}')">📌 Pin</button>`;
+  const delBtn   = (!isVonnie && !isBotMsg && isOwn) ? `<button class="msg-action-btn del" onclick="deleteMessage('${msg.id}')">DEL</button>` : '';
 
-  const usernameClass = isVonnie ? 'msg-username vonnie-name' : 'msg-username';
-  const avatarClick   = isVonnie ? '' : `onclick="viewProfile('${msg.user_id}')"`;
-  const nameClick     = isVonnie ? '' : `onclick="viewProfile('${msg.user_id}')"`;
+  const usernameClass = isVonnie ? 'msg-username vonnie-name'
+                      : isBotMsg ? 'msg-username' 
+                      : 'msg-username';
+  const botNameStyle  = isBotMsg ? 'color:var(--green);' : '';
+  const avatarClick   = (isVonnie || isBotMsg) ? '' : `onclick="viewProfile('${msg.user_id}')"`;
+  const nameClick     = (isVonnie || isBotMsg) ? '' : `onclick="viewProfile('${msg.user_id}')"`;
 
-  let html=`${replyHtml}<div class="msg-header">
+  // Bot attribution line (who triggered the command)
+  const botAttrHtml = isBotMsg && msg.bot_trigger_user && msg.bot_trigger_cmd
+    ? `<div class="bot-trigger-line">↳ <strong>${escHtml(msg.bot_trigger_user)}</strong> used <code class="bot-cmd-code">${escHtml(msg.bot_trigger_cmd)}</code></div>`
+    : '';
+
+  let html=`${replyHtml}${botAttrHtml}<div class="msg-header">
     <div class="msg-avatar" style="${avatarStyle}" ${avatarClick}>${avatarInner}</div>
-    <span class="${usernameClass}" ${nameClick}>${escHtml(username)}</span>
+    <span class="${usernameClass}" style="${botNameStyle}" ${nameClick}>${escHtml(username)}</span>
     <span class="msg-time">${time}</span>
     <div class="msg-actions">${reactBtn}${replyBtn}${pinBtn}${delBtn}</div>
   </div>`;
-  const bubbleClass = isVonnie ? 'msg-bubble vonnie-bubble' : `msg-bubble${isOwn?' own':''}`;
+  const bubbleClass = isVonnie ? 'msg-bubble vonnie-bubble'
+                    : isBotMsg ? 'msg-bubble bot-reply'
+                    : `msg-bubble${isOwn?' own':''}`;
   if(msg.content) html+=`<div class="${bubbleClass}">${formatText(msg.content)}</div>`;
   if(msg.image_url) html+=`<img class="msg-img" src="${msg.image_url}" alt="image" onclick="openLightbox('${msg.image_url}')">`;
   html+=`<div class="msg-reactions" id="reactions-${msg.id}"></div>`;
@@ -1751,12 +1769,27 @@ function subscribeRealtime() {
         if (currentRoomId !== roomId) return;
 
         const isVonnie = payload.new.is_vonnie === true;
+        const isBotMsg  = !!payload.new.bot_name;
 
-        // Vonnie messages: skip profile fetch, use Vonnie identity
+        // Vonnie AI messages: use Vonnie identity, skip profile fetch
         if (isVonnie) {
           renderMessage({
             ...payload.new,
             profiles:   { username:'Vonnie', avatar_color:'#9b6dff', avatar_url:null },
+            userBadges: [],
+            reactions:  [],
+            replyMsg: null, replyProf: null, replyCount: 0,
+          }, false, false, true);
+          saveLastSeen(roomId);
+          if (isNearBottom()) scrollToBottom(); else showNewMsgToast();
+          return;
+        }
+
+        // Bot reply messages from DB: render directly, no profile fetch needed
+        if (isBotMsg) {
+          renderMessage({
+            ...payload.new,
+            profiles:   null,
             userBadges: [],
             reactions:  [],
             replyMsg: null, replyProf: null, replyCount: 0,
@@ -1784,23 +1817,6 @@ function subscribeRealtime() {
         if (document.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
 
         const isOthers = payload.new.user_id !== currentUser?.id;
-
-        // Bot room: if incoming message is a command, render bot reply locally
-        if (currentRoomMode === 'bot' && payload.new.content?.startsWith('/') && isOthers) {
-          const reply = getBotReply(payload.new.content);
-          if (reply !== null) {
-            renderMessage({
-              ...payload.new,
-              profiles: profile || null,
-              userBadges: (badges || []).map(x => x.badge_id),
-              reactions: [], replyMsg, replyProf, replyCount: 0,
-            }, false, false, true);
-            setTimeout(() => renderBotMessage(reply, profile?.username || 'unknown', payload.new.content), 600);
-            saveLastSeen(roomId);
-            if (isNearBottom()) scrollToBottom(); else showNewMsgToast();
-            return;
-          }
-        }
 
         renderMessage({
           ...payload.new,
@@ -1892,7 +1908,8 @@ window.sendMessage = async function() {
       input.value = ''; input.style.height = 'auto';
       document.getElementById('charCounter').textContent = '';
       cancelReply();
-      // Save command to DB so everyone sees who used it
+
+      // 1. Save user's command to DB
       const {data:cmdInserted} = await supabase.from('messages').insert({
         user_id: currentUser.id, room_id: currentRoomId, content
       }).select().single();
@@ -1901,9 +1918,27 @@ window.sendMessage = async function() {
         let badges=[];
         try{const{data:b}=await supabase.from('user_badges').select('badge_id').eq('user_id',currentUser.id);badges=b||[];}catch(e){}
         renderMessage({...cmdInserted,profiles:currentProfile,userBadges:badges.map(b=>b.badge_id),reactions:[],replyMsg:null,replyProf:null,replyCount:0},false,false,true);
+        scrollToBottom();
       }
-      // Render bot reply locally with attribution
-      setTimeout(() => renderBotMessage(reply, currentProfile?.username || 'user', content), 500);
+
+      // 2. Save bot's reply to DB (delay 500ms for natural feel)
+      setTimeout(async () => {
+        const {data:botInserted} = await supabase.from('messages').insert({
+          user_id:  currentUser.id,
+          room_id:  currentRoomId,
+          content:  reply,
+          bot_name: 'VonnieBot',
+          bot_trigger_user: currentProfile?.username || 'unknown',
+          bot_trigger_cmd:  content,
+        }).select().single();
+        if (botInserted) {
+          localRenderedIds.add(botInserted.id);
+          renderBotMessage(reply, currentProfile?.username || 'unknown', content, botInserted.id);
+        } else {
+          // Fallback if bot_name column doesn't exist yet
+          renderBotMessage(reply, currentProfile?.username || 'unknown', content);
+        }
+      }, 500);
       return;
     }
   }
@@ -2562,7 +2597,7 @@ function getBotReply(content) {
   return null;
 }
 
-function renderBotMessage(content, triggeredBy, command) {
+function renderBotMessage(content, triggeredBy, command, dbId) {
   const container = document.getElementById('commMessages');
   const empty = document.getElementById('commEmpty');
   if (empty) empty.remove();
@@ -2570,7 +2605,7 @@ function renderBotMessage(content, triggeredBy, command) {
   const time = `${String(_d.getHours()).padStart(2,'0')}:${String(_d.getMinutes()).padStart(2,'0')}`;
   const group = document.createElement('div');
   group.className = 'msg-group animate-in';
-  group.dataset.msgId = 'bot-' + Date.now();
+  group.dataset.msgId = dbId || ('bot-' + Date.now());
   const attributionHtml = triggeredBy && command
     ? `<div class="bot-trigger-line">↳ <strong>${escHtml(triggeredBy)}</strong> used <code class="bot-cmd-code">${escHtml(command)}</code></div>`
     : '';
@@ -2631,8 +2666,17 @@ async function callVonnieAI(userMessage) {
 
     if (!response.ok) {
       const errData = await response.json().catch(()=>({}));
+      const errMsg = errData?.error?.message || '';
       console.error('Vonnie Worker error:', response.status, errData);
-      renderVonnieMessage(`⚠️ Error ${response.status}: ${errData?.error?.message || 'Worker returned an error'}`);
+      let friendlyMsg;
+      if (response.status === 400 && errMsg.toLowerCase().includes('credit')) {
+        friendlyMsg = 'อุ๊ย... Vonnie ต้องพักก่อนนะ 🛌 (API credits หมดชั่วคราว เดี๋ยวกลับมา!)';
+      } else if (response.status === 529 || response.status === 503) {
+        friendlyMsg = 'เซิร์ฟเวอร์แน่นมากเลยตอนนี้ รอแป๊บแล้วลองใหม่นะ~ 🐢';
+      } else {
+        friendlyMsg = `ขอโทษนะ มีปัญหาเล็กน้อย (${response.status}) ลองใหม่อีกทีได้เลย 🛠️`;
+      }
+      renderVonnieMessage(friendlyMsg);
       vonnieHistory.pop();
     } else {
       const data = await response.json();
