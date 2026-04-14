@@ -1700,7 +1700,7 @@ async function loadMessages() {
 
   data.forEach(msg=>{
     const isBotRow = !!msg.bot_name;
-    msg.profiles=msg.is_vonnie ? { username:'Vonnie', avatar_color:'#9b6dff', avatar_url:null }
+    msg.profiles=msg.is_vonnie ? { username:VONNIE_DISPLAY_NAME, avatar_color:'#9b6dff', avatar_url:VONNIE_AVATAR_URL }
                 : isBotRow     ? null
                 : (profileMap[msg.user_id]||null);
     msg.userBadges=(msg.is_vonnie || isBotRow) ? [] : (badgeMap[msg.user_id]||[]);
@@ -1753,17 +1753,17 @@ function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
   const isVonnie = msg.is_vonnie === true;
   const isBotMsg = !!msg.bot_name; // bot reply from DB
   if (isVonnie) {
-    msg.profiles = msg.profiles || { username: 'Vonnie', avatar_color: '#9b6dff', avatar_url: null };
+    msg.profiles = msg.profiles || { username: VONNIE_DISPLAY_NAME, avatar_color: '#9b6dff', avatar_url: VONNIE_AVATAR_URL };
   }
 
   const isOwn   = msg.user_id === currentUser?.id && !isVonnie && !isBotMsg;
-  const username = isVonnie ? 'Vonnie'
+  const username = isVonnie ? VONNIE_DISPLAY_NAME
                  : isBotMsg ? (msg.bot_name || 'VonnieBot')
                  : (msg.profiles?.username || 'unknown');
   const color    = isVonnie ? '#9b6dff'
                  : isBotMsg ? 'rgba(0,212,255,.1)'
                  : (msg.profiles?.avatar_color || '#00d4ff');
-  const avatarUrl = (isVonnie || isBotMsg) ? null : (msg.profiles?.avatar_url || null);
+  const avatarUrl = isVonnie ? VONNIE_AVATAR_URL : isBotMsg ? null : (msg.profiles?.avatar_url || null);
   const initial   = isVonnie ? 'V' : isBotMsg ? '🤖' : username[0].toUpperCase();
   const _d=new Date(msg.created_at);
 
@@ -1786,7 +1786,7 @@ function renderMessage(msg, prepend=false, isFirstUnread=false, animate=false) {
   else dateLabel=`${String(dd).padStart(2,'0')} ${MONTHS[mm]} ${yy}`;
   const avatarInner=avatarUrl?`<img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`:initial;
   const avatarStyle = isVonnie
-    ? 'background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;'
+    ? (VONNIE_AVATAR_URL ? 'background:transparent;' : 'background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;')
     : isBotMsg
     ? 'background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);font-size:15px;'
     : (avatarUrl ? 'background:transparent;' : `background:${color};`);
@@ -1962,7 +1962,7 @@ function subscribeRealtime() {
           if (payload.new.user_id === currentUser?.id) return;
           renderMessage({
             ...payload.new,
-            profiles:   { username:'Vonnie', avatar_color:'#9b6dff', avatar_url:null },
+            profiles:   { username:VONNIE_DISPLAY_NAME, avatar_color:'#9b6dff', avatar_url:VONNIE_AVATAR_URL },
             userBadges: [],
             reactions:  [],
             replyMsg: null, replyProf: null, replyCount: 0,
@@ -2770,7 +2770,7 @@ const ROOM_CONFIG = {
   'showcase':     { icon: '🖼', desc: '— Share your work · images only',                          mode: 'image-only' },
   'lounge':       { icon: '☕', desc: '— Chill zone · slow mode 30s',                             mode: 'slow', slowMs: 30000 },
   'bot':          { icon: '🤖', desc: '— /roll /8ball /coin /rps /joke /choose /quote /help',     mode: 'bot' },
-  'ai-vonnie':    { icon: '🧠', desc: '— Chat with Vonnie AI · conversations stay private',       mode: 'ai' },
+  'ai-vonnie':    { icon: '🧠', desc: '— Chat with Vonnie jr.',                                    mode: 'ai' },
   'announcements':{ icon: '📢', desc: '— Announcements · read only',                              mode: 'announce' },
 };
 let currentRoomMode = 'normal';
@@ -2994,9 +2994,9 @@ function renderBotMessage(content, triggeredBy, command, dbId) {
 // ============================================================
 const VONNIE_WORKER_URL = 'https://purple-glade-423b.mcheuxchang.workers.dev';
 const VONNIE_AVATAR_URL = 'https://hfwywsfqwnlavhnmepyj.supabase.co/storage/v1/object/public/community-images/7808cf10-687b-4054-9bd2-6963ac77405f/1775982907840.png';
-const VONNIE_DISPLAY_NAME = 'Vonnie_AI';
+const VONNIE_DISPLAY_NAME = 'Vonnie jr.';
 
-const VONNIE_SYSTEM_BASE = `You are Vonnie_AI, created by [Vonnie], You are a friendly and helpful AI assistant who loves chatting about games, stories, and fich! You have a silly and casual personality, with a touch of dry humor. Your main goal is to provide fun and engaging conversations while being supportive and kind.
+const VONNIE_SYSTEM_BASE = `You are Vonnie jr., created by [Vonnie], You are a friendly and helpful AI assistant who loves chatting about games, stories, and fich! You have a silly and casual personality, with a touch of dry humor. Your main goal is to provide fun and engaging conversations while being supportive and kind.
 
 Your personality (based on your creator):
 - Silly and casual — never formal, talk like texting a friend
@@ -3097,7 +3097,7 @@ function renderVonnieTyping(id) {
     ? `<img src="${VONNIE_AVATAR_URL}" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
     : 'V';
   div.innerHTML = `<div class="msg-header">
-    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">${avatarHtml}</div>
+    <div class="msg-avatar" style="${VONNIE_AVATAR_URL ? 'background:transparent;' : 'background:linear-gradient(135deg,#9b6dff,#00d4ff);'}">${avatarHtml}</div>
     <span class="msg-username vonnie-name">${VONNIE_DISPLAY_NAME}</span>
   </div>
   <div class="msg-bubble vonnie-typing-bubble">
@@ -3118,7 +3118,7 @@ function renderVonnieMessage(text) {
     ? `<img src="${VONNIE_AVATAR_URL}" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
     : 'V';
   group.innerHTML = `<div class="msg-header">
-    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">${avatarHtml}</div>
+    <div class="msg-avatar" style="${VONNIE_AVATAR_URL ? 'background:transparent;' : 'background:linear-gradient(135deg,#9b6dff,#00d4ff);'}">${avatarHtml}</div>
     <span class="msg-username vonnie-name">${VONNIE_DISPLAY_NAME}</span>
     <span class="msg-time">${time}</span>
   </div>
