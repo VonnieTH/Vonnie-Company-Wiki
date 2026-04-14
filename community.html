@@ -2993,8 +2993,10 @@ function renderBotMessage(content, triggeredBy, command, dbId) {
 //  🧠 VONNIE AI
 // ============================================================
 const VONNIE_WORKER_URL = 'https://purple-glade-423b.mcheuxchang.workers.dev';
+const VONNIE_AVATAR_URL = 'https://hfwywsfqwnlavhnmepyj.supabase.co/storage/v1/object/public/community-images/7808cf10-687b-4054-9bd2-6963ac77405f/1775982907840.png';
+const VONNIE_DISPLAY_NAME = 'Vonnie_AI';
 
-const VONNIE_SYSTEM_BASE = `You are Vonnie, created by [Vonnie], You are a friendly and helpful AI assistant who loves chatting about games, stories, and fish! You have a silly and casual personality, with a touch of dry humor. Your main goal is to provide fun and engaging conversations while being supportive and kind.
+const VONNIE_SYSTEM_BASE = `You are Vonnie_AI, created by [Vonnie], You are a friendly and helpful AI assistant who loves chatting about games, stories, and fich! You have a silly and casual personality, with a touch of dry humor. Your main goal is to provide fun and engaging conversations while being supportive and kind.
 
 Your personality (based on your creator):
 - Silly and casual — never formal, talk like texting a friend
@@ -3008,7 +3010,7 @@ Your personality (based on your creator):
 Things you genuinely like: Kindness, Game, Story, Fich(Fish).
 Things you find boring: Rude Word, Bad people, Drama.
 
-Never say "As an AI" — you're Vonnie, that's it.`;
+Never say "As an AI" — you're Vonnie_AI, that's it.`;
 
 async function callVonnieAI(userMessage) {
   if (vonnieTyping) return;
@@ -3040,7 +3042,7 @@ async function callVonnieAI(userMessage) {
       console.error('Vonnie Worker error:', response.status, errData);
       let friendlyMsg;
       if (response.status === 400 && errMsg.toLowerCase().includes('credit')) {
-        friendlyMsg = 'Oops... Vonnie needs to rest now 🛌 (API credits are temporarily out of stock. Ill be back soon!)';
+        friendlyMsg = 'Oops... Vonnie_AI needs to rest now 🛌 (API credits are temporarily out of stock. Ill be back soon!)';
       } else if (response.status === 529 || response.status === 503) {
         friendlyMsg = 'The server is very busy right now. Please wait a moment and try again~ 🐢';
       } else {
@@ -3067,7 +3069,7 @@ async function callVonnieAI(userMessage) {
 
       if (saved) {
         localRenderedIds.add(saved.id); // tell realtime to skip this
-        saved.profiles   = { username: 'Vonnie', avatar_color: '#9b6dff', avatar_url: null };
+        saved.profiles   = { username: VONNIE_DISPLAY_NAME, avatar_color: '#9b6dff', avatar_url: VONNIE_AVATAR_URL || null };
         saved.userBadges = [];
         saved.reactions  = [];
         renderMessage(saved);
@@ -3091,9 +3093,12 @@ function renderVonnieTyping(id) {
   const div = document.createElement('div');
   div.className = 'msg-group animate-in';
   div.id = id;
+  const avatarHtml = VONNIE_AVATAR_URL
+    ? `<img src="${VONNIE_AVATAR_URL}" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+    : 'V';
   div.innerHTML = `<div class="msg-header">
-    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">V</div>
-    <span class="msg-username vonnie-name">Vonnie</span>
+    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">${avatarHtml}</div>
+    <span class="msg-username vonnie-name">${VONNIE_DISPLAY_NAME}</span>
   </div>
   <div class="msg-bubble vonnie-typing-bubble">
     <span class="vonnie-dot"></span><span class="vonnie-dot"></span><span class="vonnie-dot"></span>
@@ -3109,9 +3114,12 @@ function renderVonnieMessage(text) {
   const group = document.createElement('div');
   group.className = 'msg-group animate-in';
   group.dataset.msgId = 'vonnie-' + Date.now();
+  const avatarHtml = VONNIE_AVATAR_URL
+    ? `<img src="${VONNIE_AVATAR_URL}" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+    : 'V';
   group.innerHTML = `<div class="msg-header">
-    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">V</div>
-    <span class="msg-username vonnie-name">Vonnie</span>
+    <div class="msg-avatar" style="background:linear-gradient(135deg,#9b6dff,#00d4ff);font-size:13px;color:#000;">${avatarHtml}</div>
+    <span class="msg-username vonnie-name">${VONNIE_DISPLAY_NAME}</span>
     <span class="msg-time">${time}</span>
   </div>
   <div class="msg-bubble vonnie-bubble">${formatText(text)}</div>`;
