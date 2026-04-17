@@ -522,6 +522,12 @@
 .vonnie-dot:nth-child(3){animation-delay:.4s;}
 
 /* Room mode badge */
+.brain-stat{display:flex;flex-direction:column;gap:4px;padding:8px 12px;background:rgba(192,132,252,.04);border:1px solid rgba(192,132,252,.15);margin-bottom:6px;}
+.brain-stat-label{font-family:var(--mono);font-size:9px;color:rgba(192,132,252,.7);letter-spacing:.12em;}
+.brain-stat-val{font-family:var(--mono);font-size:11px;color:var(--text-main);line-height:1.6;}
+.brain-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border:1px solid rgba(192,132,252,.35);color:#c084fc;background:rgba(192,132,252,.07);border-radius:2px;display:inline-block;margin:2px;}
+.brain-mood-bar{height:4px;background:rgba(192,132,252,.15);border-radius:2px;margin-top:4px;}
+.brain-mood-fill{height:100%;background:linear-gradient(90deg,#9b6dff,#c084fc);border-radius:2px;}
 .room-mode-badge.ai{color:#c084fc;border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06);}
 .room-mode-badge.announce{color:var(--gold);border-color:rgba(240,192,64,.4);background:rgba(240,192,64,.06);}
 
@@ -636,6 +642,7 @@
     <div class="comm-nav-title">VONNIESTUDIO <span>COMMUNITY</span></div>
     <div class="comm-nav-user">
       <div class="comm-avatar" id="navAvatar" onclick="openOwnProfile()" title="My Profile">?</div>
+      <button id="brainBtn" onclick="openBrainModal()" style="display:none;font-family:var(--mono);font-size:9px;padding:4px 9px;border:1px solid rgba(192,132,252,.4);background:transparent;color:#c084fc;cursor:pointer;transition:all .15s;" title="Vonnie Brain">🧠</button>
       <span id="navUsername" style="cursor:pointer;" onclick="openOwnProfile()">---</span>
       <button class="comm-logout-btn" onclick="handleLogout()">[ LOGOUT ]</button>
     </div>
@@ -761,6 +768,20 @@
 <div class="muted-bar" id="mutedBar">
   <i class="fa-solid fa-clock" style="font-size:11px;"></i>
   <span id="mutedBarText">You are timed out.</span>
+</div>
+
+
+<!-- VONNIE BRAIN PANEL (Owner only) -->
+<div class="admin-overlay" id="brainModal" onclick="if(event.target===this)closeBrainModal()">
+  <div class="admin-box" style="border-color:rgba(192,132,252,.5);box-shadow:0 0 40px rgba(192,132,252,.2);width:440px;">
+    <div class="admin-header" style="color:#c084fc;background:rgba(192,132,252,.07);border-color:rgba(192,132,252,.3);">
+      <span>🧠 VONNIE JR. — GLOBAL BRAIN</span>
+      <button class="admin-close" onclick="closeBrainModal()">[ X ]</button>
+    </div>
+    <div class="admin-body" id="brainPanelBody">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;padding:16px;">Loading brain...</div>
+    </div>
+  </div>
 </div>
 
 <!-- ADMIN PANEL MODAL -->
@@ -1350,6 +1371,7 @@ let reactPickerMsgId = null;
 let realtimeRetryTimer = null;
 let vonnieHistory   = [];
 let vonnieSummary   = null; // long-term memory summary ของ user คนนี้
+let vonnieGlobalBrain = null; // 🌐 community-wide brain
 const localRenderedIds = new Set(); // track messages rendered locally to skip realtime duplicate
 let vonnieTyping    = false;
 
@@ -1426,6 +1448,70 @@ Reply with ONLY a raw JSON object (no markdown, no explanation):
   } catch(e) {}
 }
 
+
+// ── Brain viewer (owner only) ──────────────────────────────
+window.openBrainModal = async function() {
+  const myRole = currentProfile?.role || 'member';
+  if (myRole !== 'owner') return;
+  document.getElementById('brainModal').classList.add('open');
+  await loadGlobalBrain();
+  renderBrainPanel();
+};
+window.closeBrainModal = function() {
+  document.getElementById('brainModal').classList.remove('open');
+};
+function renderBrainPanel() {
+  const body = document.getElementById('brainPanelBody');
+  const b = vonnieGlobalBrain;
+  if (!b) {
+    body.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;padding:20px;">No memory yet — Vonnie jr. will learn as people chat!</div>';
+    return;
+  }
+  const moodPct = Math.round((b.personality?.mood || 0.5) * 100);
+  const energyPct = Math.round((b.personality?.energy || 0.5) * 100);
+  const moodEmoji = moodPct > 65 ? '😄' : moodPct < 35 ? '😔' : '😐';
+  const energyEmoji = energyPct > 65 ? '⚡' : energyPct < 35 ? '💤' : '✨';
+  body.innerHTML = `
+    <div class="brain-stat">
+      <div class="brain-stat-label">COMMUNITY VIBE</div>
+      <div class="brain-stat-val">${escHtml(b.vibe || 'No data yet')}</div>
+    </div>
+    <div class="brain-stat">
+      <div class="brain-stat-label">PERSONALITY ${moodEmoji} ${energyEmoji}</div>
+      <div style="display:flex;gap:14px;padding-top:4px;">
+        <div style="flex:1;">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">Mood ${moodPct}%</div>
+          <div class="brain-mood-bar"><div class="brain-mood-fill" style="width:${moodPct}%"></div></div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">Energy ${energyPct}%</div>
+          <div class="brain-mood-bar"><div class="brain-mood-fill" style="width:${energyPct}%;background:linear-gradient(90deg,#00d4ff,#9b6dff);"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="brain-stat">
+      <div class="brain-stat-label">HOT TOPICS</div>
+      <div>${(b.topics||[]).map(t=>`<span class="brain-tag">${escHtml(t)}</span>`).join('') || '<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">None yet</span>'}</div>
+    </div>
+    <div class="brain-stat">
+      <div class="brain-stat-label">NOTABLE MOMENTS</div>
+      <div class="brain-stat-val">${(b.events||[]).map(e=>`• ${escHtml(e)}`).join('<br>') || 'None yet'}</div>
+    </div>
+    <div class="brain-stat">
+      <div class="brain-stat-label">RELATIONSHIPS</div>
+      <div class="brain-stat-val">${(b.relations||[]).map(r=>`• ${escHtml(r)}`).join('<br>') || 'None yet'}</div>
+    </div>
+    ${b.updated_at ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-align:right;margin-top:4px;">Last updated: ${new Date(b.updated_at).toLocaleString()}</div>` : ''}
+    <button class="admin-btn" style="border-color:rgba(255,107,107,.3);color:#ff6b6b;margin-top:4px;" onclick="resetGlobalBrain()">🗑 Reset Brain</button>
+  `;
+}
+window.resetGlobalBrain = async function() {
+  if (!confirm('Reset Vonnie jr.\'s community memory? This cannot be undone.')) return;
+  vonnieGlobalBrain = null;
+  await supabase.from('vonnie_memory').delete().eq('user_id', 'global');
+  renderBrainPanel();
+};
+
 // ============================================================
 //  INIT
 // ============================================================
@@ -1479,6 +1565,9 @@ function updateNavAvatar() {
   const avatarUrl = currentProfile?.avatar_url || null;
   document.getElementById('navUsername').textContent = uname;
   setAvatarEl(document.getElementById('navAvatar'), currentProfile?.avatar_url||null, color, uname[0].toUpperCase());
+  // Show brain button for owner
+  const brainBtn = document.getElementById('brainBtn');
+  if (brainBtn) brainBtn.style.display = (currentProfile?.role === 'owner') ? '' : 'none';
 }
 
 // ============================================================
@@ -2827,6 +2916,7 @@ function applyRoomMode(roomName) {
     vonnieHistory = [];
     vonnieSummary = null;
     loadVonnieMemory();
+    loadGlobalBrain(); // load community brain
   } else if (cfg.mode === 'announce') {
     if (input) { input.style.display = 'none'; }
     if (fmtToolbar) fmtToolbar.style.display = 'none';
@@ -3012,6 +3102,96 @@ Things you find boring: Rude Word, Bad people, Drama.
 
 Never say "As an AI" — you're Vonnie_AI, that's it.`;
 
+// ============================================================
+//  🌐 VONNIE GLOBAL BRAIN — community-wide memory
+// ============================================================
+// (vonnieGlobalBrain declared at top of state variables)
+
+async function loadGlobalBrain() {
+  try {
+    const { data } = await supabase
+      .from('vonnie_memory')
+      .select('*')
+      .eq('user_id', 'global')
+      .maybeSingle();
+    vonnieGlobalBrain = data?.summary || null;
+  } catch(e) {}
+}
+
+async function updateGlobalBrain(userMessage, aiReply, username) {
+  // Only update occasionally (every 3 AI replies) to save API calls
+  if (!vonnieGlobalBrain) vonnieGlobalBrain = { vibe: null, events: [], relations: [], topics: [], personality: { mood: 0.5, energy: 0.5 } };
+  
+  const updateCount = (vonnieGlobalBrain._updateCount || 0) + 1;
+  vonnieGlobalBrain._updateCount = updateCount;
+  if (updateCount % 3 !== 0) {
+    // Still save event/topic hints without calling AI
+    await saveGlobalBrainRaw();
+    return;
+  }
+
+  try {
+    const res = await fetch(VONNIE_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        max_tokens: 250,
+        messages: [
+          {
+            role: 'user',
+            content: `You are updating your community memory. Current memory:
+${JSON.stringify(vonnieGlobalBrain, null, 2)}
+
+New conversation (${username}): "${userMessage}" → you replied: "${aiReply}"
+
+Update and return ONLY raw JSON (no markdown):
+{
+  "vibe": "overall community mood/energy in 1 sentence",
+  "events": ["notable moment 1", "notable moment 2"],
+  "relations": ["user A and user B are friends", "..."],
+  "topics": ["topic1", "topic2"],
+  "personality": { "mood": 0.0-1.0, "energy": 0.0-1.0 },
+  "_updateCount": ${updateCount}
+}
+Keep events/relations/topics arrays max 10 items. Remove oldest if over limit.`,
+          }
+        ],
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      try { vonnieGlobalBrain = JSON.parse(clean); } catch(e) {}
+    }
+  } catch(e) {}
+  await saveGlobalBrainRaw();
+}
+
+async function saveGlobalBrainRaw() {
+  try {
+    await supabase.from('vonnie_memory').upsert({
+      user_id:    'global',
+      messages:   [],
+      summary:    vonnieGlobalBrain,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+  } catch(e) {}
+}
+
+function buildGlobalBrainContext() {
+  if (!vonnieGlobalBrain) return '';
+  const b = vonnieGlobalBrain;
+  const lines = [
+    b.vibe         ? `Community vibe: ${b.vibe}` : null,
+    b.topics?.length ? `Hot topics: ${b.topics.slice(0,5).join(', ')}` : null,
+    b.relations?.length ? `Relationships: ${b.relations.slice(0,5).join(' | ')}` : null,
+    b.events?.length ? `Recent moments: ${b.events.slice(0,3).join(' | ')}` : null,
+    b.personality  ? `Your current mood: ${b.personality.mood > 0.6 ? 'happy' : b.personality.mood < 0.4 ? 'quiet' : 'neutral'}, energy: ${b.personality.energy > 0.6 ? 'high' : b.personality.energy < 0.4 ? 'low' : 'medium'}` : null,
+  ].filter(Boolean).join('\n');
+  return lines ? `\n\n[Community memory — use naturally, don't recite it]\n${lines}` : '';
+}
+
 async function callVonnieAI(userMessage) {
   if (vonnieTyping) return;
   vonnieTyping = true;
@@ -3029,8 +3209,9 @@ async function callVonnieAI(userMessage) {
       body: JSON.stringify({
         max_tokens: 400,
         messages:   vonnieHistory,
-        username:   currentProfile?.username || null, // worker ใช้ใส่ใน system prompt
-        summary:    vonnieSummary,                    // ← ส่ง memory summary ให้ worker ด้วย
+        username:   currentProfile?.username || null,
+        summary:    vonnieSummary,
+        globalContext: buildGlobalBrainContext(), // 🌐 community memory
       }),
     });
 
@@ -3054,7 +3235,8 @@ async function callVonnieAI(userMessage) {
       const data = await response.json();
       const aiText = data.content?.[0]?.text || '...';
       vonnieHistory.push({ role: 'assistant', content: aiText });
-      saveVonnieMemory(); // บันทึกความทรงจำ
+      saveVonnieMemory(); // บันทึกความทรงจำ user
+      updateGlobalBrain(userMessage, aiText, currentProfile?.username || 'someone'); // 🌐 update community brain
 
       // ── Save Vonnie's reply to Supabase so everyone sees it + persists on reload ──
       // optimistically reserve a placeholder so Realtime event (which may fire
