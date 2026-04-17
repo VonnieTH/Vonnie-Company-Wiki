@@ -1508,7 +1508,7 @@ function renderBrainPanel() {
 window.resetGlobalBrain = async function() {
   if (!confirm('Reset Vonnie jr.\'s community memory? This cannot be undone.')) return;
   vonnieGlobalBrain = null;
-  await supabase.from('vonnie_memory').delete().eq('user_id', 'global');
+  await supabase.from('vonnie_global_brain').delete().eq('id', 1);
   renderBrainPanel();
 };
 
@@ -3110,9 +3110,9 @@ Never say "As an AI" — you're Vonnie_AI, that's it.`;
 async function loadGlobalBrain() {
   try {
     const { data } = await supabase
-      .from('vonnie_memory')
-      .select('*')
-      .eq('user_id', 'global')
+      .from('vonnie_global_brain')
+      .select('summary')
+      .eq('id', 1)
       .maybeSingle();
     vonnieGlobalBrain = data?.summary || null;
   } catch(e) {}
@@ -3170,12 +3170,11 @@ Keep events/relations/topics arrays max 10 items. Remove oldest if over limit.`,
 
 async function saveGlobalBrainRaw() {
   try {
-    await supabase.from('vonnie_memory').upsert({
-      user_id:    'global',
-      messages:   [],
+    await supabase.from('vonnie_global_brain').upsert({
+      id:         1,
       summary:    vonnieGlobalBrain,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
+    }, { onConflict: 'id' });
   } catch(e) {}
 }
 
