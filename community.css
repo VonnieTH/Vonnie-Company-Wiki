@@ -29,8 +29,7 @@
 .auth-forgot-link{
   background:none;border:none;font-family:var(--mono);font-size:9px;
   color:var(--text-dim);cursor:pointer;letter-spacing:.08em;
-  padding:4px 0;text-align:center;width:100%;
-  transition:color .15s;
+  padding:4px 0;text-align:center;width:100%;transition:color .15s;
 }
 .auth-forgot-link:hover{color:var(--cyan);}
 .auth-privacy{font-family:var(--mono);font-size:9px;color:var(--text-dim);text-align:center;margin-top:8px;line-height:1.6;}
