@@ -323,6 +323,28 @@
       <!-- Meta -->
       <div class="pview-meta" id="pviewMeta"></div>
       <div class="pview-divider"></div>
+      <!-- Activity + Streak -->
+      <div class="pview-section">ACTIVITY</div>
+      <div class="pview-activity-wrap" id="pviewActivityWrap">
+        <!-- streak row -->
+        <div class="pview-streak-row" id="pviewStreakRow">
+          <span class="pview-streak-num" id="pviewStreakNum">—</span>
+          <span class="pview-streak-label">day streak 🔥</span>
+          <span class="pview-streak-last" id="pviewStreakLast"></span>
+        </div>
+        <!-- activity graph (52 weeks × 7 days) -->
+        <div class="pview-graph" id="pviewGraph"></div>
+        <div class="pview-graph-legend">
+          <span>Less</span>
+          <span class="pview-graph-sq" style="--lvl:0"></span>
+          <span class="pview-graph-sq" style="--lvl:1"></span>
+          <span class="pview-graph-sq" style="--lvl:2"></span>
+          <span class="pview-graph-sq" style="--lvl:3"></span>
+          <span class="pview-graph-sq" style="--lvl:4"></span>
+          <span>More</span>
+        </div>
+      </div>
+      <div class="pview-divider"></div>
       <!-- Badges -->
       <div class="pview-section">BADGES</div>
       <div class="pview-badges" id="pviewBadges"></div>
