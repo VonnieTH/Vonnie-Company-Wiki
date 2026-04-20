@@ -538,6 +538,174 @@ window.resetGlobalBrain = async function() {
 };
 
 
+
+// ============================================================
+//  @ MENTION SYSTEM
+// ============================================================
+let mentionState = {
+  active: false,
+  query: '',
+  startPos: -1,
+  selectedIdx: 0,
+  results: [],
+};
+let allKnownUsers = []; // cache of { username, avatar_color, avatar_url, role }
+
+// Build user list from presence + profiles cache
+async function refreshMentionUserList() {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id,username,avatar_color,avatar_url,role')
+      .order('username');
+    allKnownUsers = data || [];
+  } catch(e) {}
+}
+
+function getMentionSuggestions(query) {
+  const q = query.toLowerCase();
+  return allKnownUsers
+    .filter(u => u.username?.toLowerCase().startsWith(q) && u.id !== currentUser?.id)
+    .slice(0, 6);
+}
+
+function openMentionDropdown(results) {
+  const dd = document.getElementById('mentionDropdown');
+  if (!dd) return;
+  dd.innerHTML = '';
+  if (!results.length) { dd.classList.remove('open'); return; }
+
+  results.forEach((u, i) => {
+    const item = document.createElement('div');
+    item.className = 'mention-item' + (i === mentionState.selectedIdx ? ' selected' : '');
+    const avStyle = u.avatar_url ? 'background:transparent;' : `background:${u.avatar_color||'#00d4ff'};`;
+    const avInner = u.avatar_url
+      ? `<img src="${u.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`
+      : (u.username?.[0]?.toUpperCase() || '?');
+    const roleLabel = u.role && u.role !== 'member' ? `<span class="mention-item-role">[${u.role.toUpperCase()}]</span>` : '';
+    item.innerHTML = `
+      <div class="mention-item-avatar" style="${avStyle}">${avInner}</div>
+      <span class="mention-item-name">@${escHtml(u.username)}</span>
+      ${roleLabel}`;
+    item.onclick = () => insertMention(u.username);
+    dd.appendChild(item);
+  });
+  dd.classList.add('open');
+}
+
+function closeMentionDropdown() {
+  const dd = document.getElementById('mentionDropdown');
+  if (dd) dd.classList.remove('open');
+  mentionState.active = false;
+  mentionState.query = '';
+  mentionState.startPos = -1;
+  mentionState.selectedIdx = 0;
+}
+
+function insertMention(username) {
+  const input = document.getElementById('commInput');
+  const before = input.value.slice(0, mentionState.startPos);
+  const after  = input.value.slice(input.selectionStart);
+  input.value = before + '@' + username + ' ' + after;
+  const newPos = before.length + username.length + 2;
+  input.setSelectionRange(newPos, newPos);
+  input.focus();
+  closeMentionDropdown();
+  onInputChange(input);
+}
+
+// Extract @mentions from message content
+function extractMentions(content) {
+  const matches = content.match(/@([a-zA-Z0-9_]+)/g) || [];
+  return [...new Set(matches.map(m => m.slice(1).toLowerCase()))];
+}
+
+// Send mention notification via Supabase
+async function notifyMentions(content, msgId) {
+  const mentioned = extractMentions(content);
+  if (!mentioned.length) return;
+  const targets = allKnownUsers.filter(u =>
+    mentioned.includes(u.username?.toLowerCase()) && u.id !== currentUser?.id
+  );
+  if (!targets.length) return;
+  // Store in mentions table
+  try {
+    await supabase.from('mentions').insert(
+      targets.map(u => ({
+        message_id:  msgId,
+        from_user:   currentUser.id,
+        to_user:     u.id,
+        room_id:     currentRoomId,
+        content:     content.slice(0, 100),
+        created_at:  new Date().toISOString(),
+      }))
+    );
+  } catch(e) {} // mentions table optional — notifications still work via realtime
+}
+
+// Load unread mentions count
+async function loadUnreadMentions() {
+  try {
+    const { count } = await supabase
+      .from('mentions')
+      .select('*', { count: 'exact', head: true })
+      .eq('to_user', currentUser.id)
+      .eq('read', false);
+    updateMentionBadge(count || 0);
+  } catch(e) {}
+}
+
+function updateMentionBadge(count) {
+  let badge = document.getElementById('mentionNavBadge');
+  const nav = document.getElementById('navAvatar');
+  if (!nav) return;
+  if (!badge) {
+    nav.style.position = 'relative';
+    badge = document.createElement('div');
+    badge.id = 'mentionNavBadge';
+    badge.className = 'mention-badge';
+    nav.appendChild(badge);
+  }
+  badge.textContent = count > 9 ? '9+' : count;
+  badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+// Subscribe to realtime mention notifications
+function subscribeMentions() {
+  if (!currentUser) return;
+  supabase.channel('mentions-rt-' + currentUser.id)
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'mentions',
+        filter: `to_user=eq.${currentUser.id}` },
+      (payload) => {
+        loadUnreadMentions();
+        // Show toast notification
+        const from = allKnownUsers.find(u => u.id === payload.new.from_user)?.username || 'Someone';
+        showMentionToast(from, payload.new.content, payload.new.room_id);
+      })
+    .subscribe();
+}
+
+function showMentionToast(fromUser, content, roomId) {
+  let toast = document.getElementById('mentionToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'mentionToast';
+    toast.style.cssText = `position:fixed;top:68px;left:50%;transform:translateX(-50%);
+      background:var(--bg-card);border:1px solid rgba(192,132,252,.5);
+      box-shadow:0 4px 20px rgba(192,132,252,.3);
+      font-family:var(--mono);font-size:11px;color:#c084fc;
+      padding:8px 16px;z-index:9100;white-space:nowrap;
+      animation:fadeUp .2s ease;cursor:pointer;`;
+    toast.onclick = () => { toast.remove(); };
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `🔔 <strong>@${escHtml(fromUser)}</strong> mentioned you: ${escHtml(content?.slice(0,40))}${content?.length>40?'…':''}`;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast?.remove(), 5000);
+  playBeep();
+}
+
 // ============================================================
 //  📊 ACTIVITY GRAPH + STREAK
 // ============================================================
@@ -678,6 +846,9 @@ async function showCommunity() {
   initNotifications();
   checkMuted();
   updateLastSeen(); // track last active + streak
+  refreshMentionUserList(); // load users for @ suggest
+  subscribeMentions();      // realtime mention notifications
+  loadUnreadMentions();     // unread badge on nav
 }
 
 // ============================================================
@@ -1110,9 +1281,14 @@ function renderReactionPills(msgId, reactions) {
 }
 
 function formatText(raw){
+  const myUsername = currentProfile?.username?.toLowerCase();
   return escHtml(raw)
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/@([a-zA-Z0-9_]+)/g, (match, name) => {
+      const isMe = myUsername && name.toLowerCase() === myUsername;
+      return `<span class="msg-mention${isMe?' is-me':''}" onclick="viewProfile('${name}')">${escHtml(match)}</span>`;
+    })
     .replace(/\n/g,'<br>');
 }
 function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1406,8 +1582,9 @@ window.sendMessage = async function() {
     }
     renderMessage({...inserted,profiles:currentProfile,userBadges:badges.map(b=>b.badge_id),reactions:[],replyMsg,replyProf,replyCount:0}, false, false, true);
     scrollToBottom();
-    // Check for new achievement badges (fire & forget)
     checkMessageBadges(currentUser.id, !!image_url);
+    // Mention notifications (fire & forget)
+    if (content) notifyMentions(content, inserted.id);
     // Slow mode cooldown
     if (currentRoomMode === 'slow') startSlowCooldown();
   }
@@ -1455,7 +1632,12 @@ function closeReactPicker(){
   document.getElementById('reactMiniPicker').classList.remove('open');
   reactPickerMsgId=null;
 }
-document.addEventListener('click',()=>closeReactPicker());
+document.addEventListener('click', (e) => {
+  closeReactPicker();
+  if (!e.target.closest('#mentionDropdown') && !e.target.closest('#commInput')) {
+    closeMentionDropdown();
+  }
+});
 
 window.toggleReaction=async function(msgId,emoji){
   try{
@@ -1490,7 +1672,34 @@ window.cancelReply=function(){
 // ============================================================
 //  INPUT
 // ============================================================
-window.handleInputKey=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
+window.handleInputKey=function(e){
+  // ── Mention dropdown keyboard nav ─────────────────────
+  if (mentionState.active && mentionState.results.length) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      mentionState.selectedIdx = (mentionState.selectedIdx + 1) % mentionState.results.length;
+      openMentionDropdown(mentionState.results);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      mentionState.selectedIdx = (mentionState.selectedIdx - 1 + mentionState.results.length) % mentionState.results.length;
+      openMentionDropdown(mentionState.results);
+      return;
+    }
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      const u = mentionState.results[mentionState.selectedIdx];
+      if (u) insertMention(u.username);
+      return;
+    }
+    if (e.key === 'Escape') {
+      closeMentionDropdown();
+      return;
+    }
+  }
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+};
 window.onInputChange=function(el){
   el.style.height='auto';
   el.style.height=Math.min(el.scrollHeight,120)+'px';
@@ -1498,6 +1707,23 @@ window.onInputChange=function(el){
   const c=document.getElementById('charCounter');
   if(rem<=50){c.textContent=rem+' chars left';c.className='char-counter '+(rem<=20?'danger':'warn');}
   else{c.textContent='';c.className='char-counter';}
+  // ── Mention detection ─────────────────────────────────
+  const cursor = el.selectionStart;
+  const textBefore = el.value.slice(0, cursor);
+  const atMatch = textBefore.match(/@([a-zA-Z0-9_]*)$/);
+  if (atMatch) {
+    const query = atMatch[1];
+    const startPos = cursor - query.length - 1; // position of @
+    mentionState.active = true;
+    mentionState.query = query;
+    mentionState.startPos = startPos;
+    const results = getMentionSuggestions(query);
+    mentionState.results = results;
+    mentionState.selectedIdx = 0;
+    openMentionDropdown(results);
+  } else {
+    closeMentionDropdown();
+  }
 };
 window.insertFmt=function(before,after){
   const input=document.getElementById('commInput');
