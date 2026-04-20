@@ -39,6 +39,7 @@
           <div class="auth-field"><label class="auth-label">EMAIL</label><input type="email" class="auth-input" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
           <div class="auth-field"><label class="auth-label">PASSWORD</label><input type="password" class="auth-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
           <button class="auth-btn" id="loginBtn" onclick="handleLogin()">[ LOGIN → ]</button>
+          <button class="auth-forgot-link" onclick="switchTab('reset')" type="button">Forgot password?</button>
         </div>
       </div>
       <div id="formRegister" style="display:none;">
@@ -50,6 +51,19 @@
           <div class="auth-privacy"><i class="fa-solid fa-shield-halved" style="color:var(--green)"></i> Username only — no real name or phone collected</div>
         </div>
       </div>
+
+      <!-- RESET PASSWORD FORM (hidden by default) -->
+      <div id="formReset" style="display:none;">
+        <div class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label">EMAIL</label>
+            <input type="email" class="auth-input" id="resetEmail" placeholder="your@email.com" autocomplete="email">
+          </div>
+          <button class="auth-btn" id="resetBtn" onclick="handleResetPassword()">[ SEND RESET LINK → ]</button>
+          <button class="auth-forgot-link" onclick="switchTab('login')" type="button">← Back to login</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
