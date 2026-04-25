@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>VonnieStudio — World Conquest</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@6.5.0/css/all.min.css">
-<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="game.css">
 </head>
 <body>
 <!-- AUTH -->
@@ -63,13 +63,13 @@
         </div>
         <div class="sfield" style="margin-top:10px">
           <label class="slbl">NATION FLAG <span style="opacity:.4">(optional)</span></label>
-          <input type="file" id="sFlagF" accept="image/*" style="display:none" onchange="prevFlag(event)">
+          <input type="file" id="sFlagF" accept="image/*" style="display:none" onchange="prevImg(this,'sFlagPrev')">
           <div class="fupzone" onclick="document.getElementById('sFlagF').click()">Click to upload flag image (PNG/JPG)</div>
           <img id="sFlagPrev" class="fupthumb" src="" alt="">
         </div>
         <div class="sfield" style="margin-top:8px">
           <label class="slbl">LEADER PORTRAIT <span style="opacity:.4">(optional)</span></label>
-          <input type="file" id="sLeadF" accept="image/*" style="display:none" onchange="prevLead(event)">
+          <input type="file" id="sLeadF" accept="image/*" style="display:none" onchange="prevImg(this,'sLeadPrev')">
           <div class="fupzone" onclick="document.getElementById('sLeadF').click()">Click to upload leader portrait</div>
           <img id="sLeadPrev" class="fupthumb-r" src="" alt="">
         </div>
@@ -213,7 +213,7 @@
       <div class="fle-row">
         <div class="fle-col">
           <div class="fle-label">NATION FLAG</div>
-          <input type="file" id="fleFlag" accept="image/*" style="display:none" onchange="(function(i){var p=document.getElementById('fleFlagPrev');p.src=URL.createObjectURL(i.files[0]);p.style.display='block';})(this)">
+          <input type="file" id="fleFlag" accept="image/*" style="display:none" onchange="prevImg(this,'fleFlagPrev')">
           <div class="fupzone" style="--c:#00d4ff" onclick="document.getElementById('fleFlag').click()">Click to upload flag</div>
           <img id="fleFlagPrev" class="fle-preview" src="" alt="">
           <div class="fle-label" style="margin-top:8px">CURRENT FLAG</div>
@@ -221,7 +221,7 @@
         </div>
         <div class="fle-col">
           <div class="fle-label">LEADER PORTRAIT</div>
-          <input type="file" id="fleLeader" accept="image/*" style="display:none" onchange="(function(i){var p=document.getElementById('fleLeaderPrev');p.src=URL.createObjectURL(i.files[0]);p.style.display='block';})(this)">
+          <input type="file" id="fleLeader" accept="image/*" style="display:none" onchange="prevImg(this,'fleLeaderPrev')">
           <div class="fupzone" style="--c:#f0c040" onclick="document.getElementById('fleLeader').click()">Click to upload portrait</div>
           <img id="fleLeaderPrev" class="fle-preview-r" src="" alt="">
           <div class="fle-label" style="margin-top:8px">CURRENT LEADER</div>
