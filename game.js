@@ -493,12 +493,27 @@ function calcIncome(nid){
   if(mod.includes('+25% Manpower'))mp*=1.25;
   else if(mod.includes('+15% Manpower'))mp*=1.15;
   else if(mod.includes('+10% Manpower'))mp*=1.10;
-  // Cabinet bonus (only for own nation)
+  // Cabinet bonus (uses trait-adjusted computePosBonus)
   if(nid===mn?.id){
     const cab=cabinetBonus();
-    gold*=(1+cab.gold/100);
-    mp*=(1+cab.manpower/100);
-    sup*=(1+cab.supply/100);
+    gold*=(1+Math.max(-50,cab.gold)/100);
+    mp*=(1+Math.max(-50,cab.manpower)/100);
+    sup*=(1+Math.max(-50,cab.supply)/100);
+    // Active laws income modifiers
+    const active=(nation?.active_laws||[]);
+    active.forEach(key=>{
+      const law=LAWS[key];if(!law)return;
+      Object.entries(law.buffs||{}).forEach(([k,v])=>{
+        if(k==='gold')gold*=(1+v/100);
+        else if(k==='manpower'||k==='mp')mp*=(1+v/100);
+        else if(k==='supply')sup*=(1+v/100);
+      });
+      Object.entries(law.debuffs||{}).forEach(([k,v])=>{
+        if(k==='gold')gold*=(1+v/100);
+        else if(k==='manpower'||k==='mp')mp*=(1+v/100);
+        else if(k==='supply')sup*=(1+v/100);
+      });
+    });
   }
   return{gold:Math.max(1,Math.round(gold)),mp:Math.max(1,Math.round(mp)),sup:Math.max(1,Math.round(sup))};
 }
@@ -517,6 +532,7 @@ function startTickTimer(){
       nations[mn.id]=mn;
       updateNatUI();
     }
+    await processPendingLaws();
     updateTickDisplay();
   },60000);
   updateTickDisplay();
@@ -1041,7 +1057,7 @@ window.toast=function(m){const t=document.getElementById('toast');t.textContent=
 })();
 // ══ POLITICS SYSTEM ══════════════════════════════════════════
 
-// ══ POLITICS SYSTEM v2 — POSITIONS + CANDIDATES ══════════════
+// ══ POLITICS SYSTEM v3 — ENHANCED POLITICIANS + CATEGORIZED LAWS ══════════════
 
 const POLITICIAN_NAMES = [
   'Ada Morrow','Ben Holloway','Celeste Vrayne','Dax Orlen','Elena Prast',
@@ -1051,58 +1067,157 @@ const POLITICIAN_NAMES = [
   'Uwe Strand','Vera Loch','Ward Eskin','Xara Dune','Yael Brisk',
   'Zeno Falk','Asha Kiran','Bram Soleil','Cira Weiss','Demi Foret',
   'Emil Strand','Fara Cael','Goro Penn','Hira Drex','Ivan Falcone',
-  'Jana Osten','Kira Thane','Luca Voss','Maya Kelm','Niko Ardell'
+  'Jana Osten','Kira Thane','Luca Voss','Maya Kelm','Niko Ardell',
+  'Oren Wexler','Pia Crest','Rael Dorn','Sera Vane','Tomas Hale',
+  'Una Korr','Vance Eld','Wren Sable','Xio Drel','Yara Finn'
 ];
 
-// Cabinet positions — each has unique effect on the nation
+// ── TRAITS: each gives specific stat bonuses/penalties ──────────────────────
+const TRAIT_EFFECTS = {
+  Ambitious:   {label:'Ambitious',   buffs:['gold+5'],               debuffs:['stability-3'],  desc:'+5% Gold, -3% Stability'},
+  Pragmatic:   {label:'Pragmatic',   buffs:['gold+3','supply+3'],    debuffs:[],               desc:'+3% Gold, +3% Supply'},
+  Idealist:    {label:'Idealist',    buffs:['support+10','stability+4'],debuffs:['gold-4'],     desc:'+10 Support, +4% Stability, -4% Gold'},
+  Corrupt:     {label:'Corrupt',     buffs:['gold+8'],               debuffs:['stability-8','support-5'], desc:'+8% Gold, -8% Stability, -5 Support'},
+  Patriot:     {label:'Patriot',     buffs:['manpower+6','stability+4'],debuffs:[],             desc:'+6% Manpower, +4% Stability'},
+  Scholar:     {label:'Scholar',     buffs:['gold+4','supply+5'],    debuffs:['manpower-3'],   desc:'+4% Gold, +5% Supply, -3% Manpower'},
+  Veteran:     {label:'Veteran',     buffs:['manpower+8','supply+4'],debuffs:['gold-3'],       desc:'+8% Manpower, +4% Supply, -3% Gold'},
+  Populist:    {label:'Populist',    buffs:['support+15','manpower+4'],debuffs:['gold-5'],     desc:'+15 Support, +4% Manpower, -5% Gold'},
+  Reformer:    {label:'Reformer',    buffs:['stability+8','supply+4'],debuffs:['gold-2'],      desc:'+8% Stability, +4% Supply, -2% Gold'},
+  Hardliner:   {label:'Hardliner',   buffs:['manpower+10'],          debuffs:['stability-6','support-8'],desc:'+10% Manpower, -6% Stability, -8 Support'},
+  Economist:   {label:'Economist',   buffs:['gold+12'],              debuffs:['stability-4'],  desc:'+12% Gold, -4% Stability'},
+  Nationalist: {label:'Nationalist', buffs:['manpower+8','stability+4'],debuffs:['support-6'], desc:'+8% Manpower, +4% Stability, -6 Support'},
+  Pacifist:    {label:'Pacifist',    buffs:['stability+10','supply+6'],debuffs:['manpower-8'], desc:'+10% Stability, +6% Supply, -8% Manpower'},
+  Warmonger:   {label:'Warmonger',   buffs:['manpower+12'],          debuffs:['stability-8','gold-4'],  desc:'+12% Manpower, -8% Stability, -4% Gold'},
+  Technocrat:  {label:'Technocrat',  buffs:['gold+6','supply+8'],    debuffs:['support-4'],   desc:'+6% Gold, +8% Supply, -4 Support'},
+};
+
+// ── CABINET POSITIONS ───────────────────────────────────────────────────────
+// Each position has a base effect + receives trait modifiers on top
 const POSITIONS = {
-  chancellor:     {title:'Chancellor',      icon:'👑', desc:'Head of state', effect:'gold',     amount:8,  lifespan:[2,5]},
-  finance_min:    {title:'Finance Minister',icon:'💰', desc:'Controls economy', effect:'gold',  amount:12, lifespan:[1,4]},
-  war_min:        {title:'War Minister',    icon:'⚔', desc:'Commands military', effect:'manpower',amount:10,lifespan:[2,4]},
-  supply_min:     {title:'Supply Minister', icon:'📦', desc:'Manages logistics', effect:'supply', amount:10,lifespan:[1,3]},
-  interior_min:   {title:'Interior Minister',icon:'🏛', desc:'Maintains order', effect:'stability',amount:6,lifespan:[2,5]},
-  propagandist:   {title:'Propagandist',    icon:'📢', desc:'Shapes ideology', effect:'support', amount:8, lifespan:[1,3]},
+  chancellor:   {title:'Chancellor',        icon:'👑', desc:'Head of state. Amplifies all income.', baseEffect:{gold:6,manpower:4,supply:4},   lifespan:[3,6]},
+  finance_min:  {title:'Finance Minister',  icon:'💰', desc:'Controls national economy.',           baseEffect:{gold:14},                        lifespan:[2,4]},
+  war_min:      {title:'War Minister',      icon:'⚔', desc:'Commands the military machine.',       baseEffect:{manpower:12},                    lifespan:[2,4]},
+  supply_min:   {title:'Supply Minister',   icon:'📦', desc:'Manages logistics and supply chains.', baseEffect:{supply:12},                      lifespan:[1,3]},
+  interior_min: {title:'Interior Minister', icon:'🏛', desc:'Maintains order and stability.',       baseEffect:{stability:8},                    lifespan:[2,5]},
+  propagandist: {title:'Propagandist',      icon:'📢', desc:'Shapes ideology and party support.',   baseEffect:{support:10},                     lifespan:[1,3]},
+  foreign_min:  {title:'Foreign Minister',  icon:'🌐', desc:'Diplomatic income and stability.',     baseEffect:{gold:8,stability:5},             lifespan:[2,4]},
+  spy_chief:    {title:'Spymaster',         icon:'🕵', desc:'Covert ops. Reduces others\' income.', baseEffect:{gold:5,supply:5},               lifespan:[1,3]},
 };
 
-// LAWS
+// ── LAWS — CATEGORIZED ──────────────────────────────────────────────────────
+// category, name, effects (buffs/debuffs), govs (required ideologies), req_ideology (min support%), enact_weeks (time to pass)
 const LAWS = {
-  free_press:  {name:'Free Press',    effect:'+5% Stability, -5% Gold',   govs:['Paperist Democracy','Classical Liberalism','Aesthetic Democracy']},
-  state_media: {name:'State Media',   effect:'+10% Stability',             govs:['Autocracy','Neo-Authoritarianism','Superiority Radicalism']},
-  open_market: {name:'Open Markets',  effect:'+15% Gold, -5% Manpower',   govs:['Classical Liberalism','Eclecticism','Post-Modernism']},
-  conscript:   {name:'Conscription',  effect:'+20% Manpower, -10% Gold',  govs:['Third Positionism','Superiority Radicalism','Paperolutionary Left']},
-  land_reform: {name:'Land Reform',   effect:'+10% Supply, +5% Stability',govs:['Reformatorist Left','Paperolutionary Left','Institutionalism']},
-  theocratic:  {name:'Sacred Law',    effect:'+15% Stability',             govs:['Traditionalist Right','Institutionalism']},
-  open_border: {name:'Open Borders',  effect:'+10% Manpower, +5% Stability',govs:['Anarchism','Post-Modernism','Aesthetic Democracy']},
-  war_economy: {name:'War Economy',   effect:'+20% Army, -15% Gold',      govs:['Third Positionism','Superiority Radicalism','Neo-Authoritarianism']},
+  // ── GOVERNMENT STRUCTURE ──
+  strong_exec:    {cat:'Government',  name:'Strong Executive',   buffs:{stability:12},          debuffs:{gold:-3},              govs:['Autocracy','Neo-Authoritarianism','Institutionalism'],              req_ideology:30, enact_weeks:1},
+  fed_system:     {cat:'Government',  name:'Federal System',     buffs:{gold:5,manpower:5,supply:5},debuffs:{stability:-4},     govs:['Paperist Democracy','Classical Liberalism','Reformatorist Left'],  req_ideology:40, enact_weeks:2},
+  emergency_law:  {cat:'Government',  name:'Emergency Powers',   buffs:{manpower:15,stability:8},debuffs:{gold:-10,support:-10},govs:['Autocracy','Neo-Authoritarianism','Third Positionism'],            req_ideology:50, enact_weeks:1},
+  civil_service:  {cat:'Government',  name:'Civil Service Reform',buffs:{gold:4,stability:6},   debuffs:{},                    govs:['Institutionalism','Paperist Democracy','Classical Liberalism'],     req_ideology:25, enact_weeks:3},
+
+  // ── PUBLIC HEALTH ──
+  natl_health:    {cat:'Public Health',name:'National Healthcare',buffs:{manpower:8,stability:6},debuffs:{gold:-8},            govs:['Reformatorist Left','Paperolutionary Left','Aesthetic Democracy','Paperist Democracy'],req_ideology:35,enact_weeks:3},
+  quarantine:     {cat:'Public Health',name:'Quarantine Act',     buffs:{stability:5},           debuffs:{manpower:-5,gold:-3},govs:['Institutionalism','Neo-Authoritarianism','Autocracy'],             req_ideology:20, enact_weeks:1},
+  labor_protect:  {cat:'Public Health',name:'Labor Protections',  buffs:{manpower:10,stability:5},debuffs:{gold:-6},           govs:['Reformatorist Left','Paperolutionary Left','Institutionalism'],    req_ideology:30, enact_weeks:2},
+  state_housing:  {cat:'Public Health',name:'State Housing',      buffs:{manpower:12},           debuffs:{gold:-10,supply:-4}, govs:['Paperolutionary Left','Reformatorist Left','Institutionalism'],   req_ideology:40, enact_weeks:4},
+
+  // ── FREEDOM ──
+  free_press:     {cat:'Freedom',     name:'Free Press',          buffs:{stability:5,support:8}, debuffs:{gold:-3},            govs:['Paperist Democracy','Classical Liberalism','Aesthetic Democracy'], req_ideology:25, enact_weeks:1},
+  open_border:    {cat:'Freedom',     name:'Open Borders',        buffs:{manpower:10,stability:5},debuffs:{},                  govs:['Anarchism','Post-Modernism','Aesthetic Democracy'],                req_ideology:20, enact_weeks:1},
+  free_assembly:  {cat:'Freedom',     name:'Right of Assembly',   buffs:{support:12,stability:6},debuffs:{gold:-2},            govs:['Paperist Democracy','Anarchism','Reformatorist Left','Aesthetic Democracy'],req_ideology:30,enact_weeks:2},
+  censorship:     {cat:'Freedom',     name:'State Censorship',    buffs:{stability:10},          debuffs:{support:-15,gold:-4},govs:['Autocracy','Neo-Authoritarianism','Superiority Radicalism'],      req_ideology:45, enact_weeks:1},
+
+  // ── TAXATION ──
+  flat_tax:       {cat:'Taxation',    name:'Flat Tax',            buffs:{gold:10},               debuffs:{stability:-4},       govs:['Classical Liberalism','Eclecticism','Post-Modernism'],            req_ideology:30, enact_weeks:2},
+  progressive_tax:{cat:'Taxation',   name:'Progressive Taxation',buffs:{gold:6,stability:5},    debuffs:{},                   govs:['Reformatorist Left','Paperist Democracy','Institutionalism'],     req_ideology:35, enact_weeks:2},
+  zero_tax:       {cat:'Taxation',    name:'No Taxation',         buffs:{support:20},            debuffs:{gold:-20,stability:-6},govs:['Anarchism','Classical Liberalism'],                             req_ideology:55, enact_weeks:1},
+  war_levy:       {cat:'Taxation',    name:'War Levy',            buffs:{gold:14,manpower:8},    debuffs:{stability:-8,support:-10},govs:['Third Positionism','Superiority Radicalism','Neo-Authoritarianism'],req_ideology:45,enact_weeks:1},
+
+  // ── ECONOMY ──
+  open_market:    {cat:'Economy',     name:'Open Markets',        buffs:{gold:15},               debuffs:{manpower:-5},        govs:['Classical Liberalism','Eclecticism','Post-Modernism'],            req_ideology:30, enact_weeks:2},
+  nationalize:    {cat:'Economy',     name:'Nationalization',     buffs:{supply:14,manpower:8},  debuffs:{gold:-10},           govs:['Paperolutionary Left','Reformatorist Left','Institutionalism'],   req_ideology:40, enact_weeks:4},
+  war_economy:    {cat:'Economy',     name:'War Economy',         buffs:{manpower:18,supply:10}, debuffs:{gold:-14,stability:-5},govs:['Third Positionism','Superiority Radicalism','Neo-Authoritarianism'],req_ideology:45,enact_weeks:2},
+  land_reform:    {cat:'Economy',     name:'Land Reform',         buffs:{supply:10,stability:5}, debuffs:{gold:-4},            govs:['Reformatorist Left','Paperolutionary Left','Institutionalism'],   req_ideology:35, enact_weeks:3},
+
+  // ── MILITARY ──
+  conscript:      {cat:'Military',    name:'Conscription',        buffs:{manpower:20},           debuffs:{gold:-10,stability:-4},govs:['Third Positionism','Superiority Radicalism','Paperolutionary Left'],req_ideology:40,enact_weeks:2},
+  professional:   {cat:'Military',    name:'Professional Army',   buffs:{manpower:10,stability:4},debuffs:{gold:-8,supply:-4}, govs:['Institutionalism','Neo-Authoritarianism','Autocracy','Classical Liberalism'],req_ideology:35,enact_weeks:3},
+  total_war:      {cat:'Military',    name:'Total War Doctrine',  buffs:{manpower:25,supply:10}, debuffs:{gold:-18,stability:-12,support:-12},govs:['Superiority Radicalism','Third Positionism'],    req_ideology:60, enact_weeks:1},
+
+  // ── RELIGION / CULTURE ──
+  theocratic:     {cat:'Culture',     name:'Sacred Law',          buffs:{stability:15},          debuffs:{gold:-3,support:-5}, govs:['Traditionalist Right','Institutionalism'],                       req_ideology:35, enact_weeks:2},
+  state_media:    {cat:'Culture',     name:'State Media',         buffs:{stability:10,support:6},debuffs:{gold:-2},            govs:['Autocracy','Neo-Authoritarianism','Superiority Radicalism'],      req_ideology:35, enact_weeks:1},
+  cultural_rev:   {cat:'Culture',     name:'Cultural Revolution', buffs:{support:15,stability:5},debuffs:{gold:-5,manpower:-5},govs:['Paperolutionary Left','Aesthetic Democracy','Post-Modernism'],   req_ideology:50, enact_weeks:3},
+  heritage_prot:  {cat:'Culture',     name:'Heritage Protection', buffs:{stability:8,support:5}, debuffs:{},                   govs:['Traditionalist Right','Institutionalism','Paperist Democracy'],  req_ideology:25, enact_weeks:2},
 };
 
+// Pseudo-random number generator (deterministic from seed)
 // Pseudo-random number generator (deterministic from seed)
 function mkRng(seed){let s=seed;return()=>{s=Math.sin(s+1)*43758.5453;return s-(s|0);};}
 
 // Generate 3 candidates for a position in a given week
-function genCandidates(posKey, week, nationSeed){
-  const rng=mkRng(week*997+nationSeed+posKey.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+function genCandidates(posKey, week, ns){
+  const rng=mkRng(week*997+ns+posKey.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
   const govKeys=Object.keys(GOVS);
+  const traitKeys=Object.keys(TRAIT_EFFECTS);
   return Array.from({length:3},(_,i)=>{
     const ni=Math.floor(rng()*POLITICIAN_NAMES.length);
     const gi=Math.floor(rng()*govKeys.length);
+    const ti=Math.floor(rng()*traitKeys.length);
     const ideo=govKeys[gi];
+    const traitKey=traitKeys[ti];
     const g=GOVS[ideo]||{color:'#888'};
     const pos=POSITIONS[posKey];
-    // Age: each politician lives 1-5 weeks depending on position
     const lifeWeeks=pos.lifespan[0]+Math.floor(rng()*(pos.lifespan[1]-pos.lifespan[0]+1));
-    const age=Math.floor(30+rng()*40); // 30-70 years old
+    const age=Math.floor(30+rng()*40);
     return{
       name:POLITICIAN_NAMES[(ni+i*7)%POLITICIAN_NAMES.length],
       ideology:ideo, color:g.color,
-      age, lifeWeeks,
-      trait:pickTrait(rng),
+      age, lifeWeeks, trait:traitKey,
     };
   });
 }
 
-const TRAITS=['Ambitious','Pragmatic','Idealist','Corrupt','Patriot','Scholar','Veteran','Populist','Reformer','Hardliner'];
-function pickTrait(rng){return TRAITS[Math.floor(rng()*TRAITS.length)];}
+function pickTrait(rng){const k=Object.keys(TRAIT_EFFECTS);return k[Math.floor(rng()*k.length)];}
+
+// Compute effective bonus for a position+politician combo
+function computePosBonus(posKey, entry){
+  const pos=POSITIONS[posKey];
+  if(!pos||!entry)return{gold:0,manpower:0,supply:0,stability:0,support:0};
+  const base={...pos.baseEffect};
+  const trait=TRAIT_EFFECTS[entry.trait]||{};
+  const result={gold:0,manpower:0,supply:0,stability:0,support:0};
+  Object.entries(base).forEach(([k,v])=>{if(k in result)result[k]+=v;});
+  const parseStat=(s)=>{const m=s.match(/^(\w+)([+-]\d+)$/);return m?{key:m[1],val:parseInt(m[2])}:null;};
+  (trait.buffs||[]).forEach(b=>{const p=parseStat(b);if(p&&p.key in result)result[p.key]+=p.val;});
+  (trait.debuffs||[]).forEach(d=>{const p=parseStat(d);if(p&&p.key in result)result[p.key]+=p.val;});
+  return result;
+}
+
+// Format bonus object to readable HTML
+function bonusToStr(bonus){
+  const parts=[];
+  const fmtK={gold:'Gold',manpower:'Manpower',supply:'Supply',stability:'Stability',support:'Support'};
+  Object.entries(bonus).forEach(([k,v])=>{
+    if(v===0)return;
+    const suffix=(k==='support')?'':'%';
+    parts.push((v>0?'<span style="color:#40ff80">+'+v+suffix+'</span>':'<span style="color:#ff6b6b">'+v+suffix+'</span>')+' '+fmtK[k]);
+  });
+  return parts.join(', ')||'No bonus';
+}
+
+// Law effect to display HTML string
+function lawEffectStr(law){
+  const parts=[];
+  const fmtK={gold:'Gold',manpower:'Manpower',supply:'Supply',stability:'Stability'};
+  Object.entries(law.buffs||{}).forEach(([k,v])=>{
+    const suffix=(k==='support')?'':'%';
+    parts.push('<span style="color:#40ff80">+'+v+suffix+'</span> '+(fmtK[k]||k));
+  });
+  Object.entries(law.debuffs||{}).forEach(([k,v])=>{
+    const suffix=(k==='support')?'':'%';
+    parts.push('<span style="color:#ff6b6b">'+v+suffix+'</span> '+(fmtK[k]||k));
+  });
+  return parts.join(', ')||'No effect';
+}
 
 // Get current week number
 function currentWeek(){return Math.floor(Date.now()/(7*24*3600000));}
@@ -1123,7 +1238,7 @@ function isPosExpired(posKey){
   return currentWeek()>=expiresWeek;
 }
 
-// Render politicians tab — show positions with candidates to choose
+// Render politicians tab — enhanced with trait buffs/debuffs display
 function renderPoliticians(){
   const week=currentWeek();
   const ns=nationSeed(mn.id);
@@ -1134,47 +1249,53 @@ function renderPoliticians(){
     +'New candidates every 7 days · Next reshuffle: '
     +String(nextDate.getDate()).padStart(2,'0')+' '+MONTHS[nextDate.getMonth()]+' '+nextDate.getFullYear()
     +'</div>';
-
   Object.entries(POSITIONS).forEach(([posKey,pos])=>{
     const current=cab[posKey];
     const expired=isPosExpired(posKey);
     const expiresIn=current?((current.week_selected||0)+(current.lifeWeeks||2)-week):0;
     const candidates=genCandidates(posKey,week,ns);
     const g=GOVS[current?.ideology]||{color:'#888'};
-
+    const curBonus=current?computePosBonus(posKey,current):{};
+    const baseStr=Object.entries(pos.baseEffect).map(([k,v])=>'<span style="color:#40ff80">+'+v+(k==='support'?'':'%')+'</span> '+k).join(', ');
     html+='<div style="border:1px solid rgba(0,212,255,.15);padding:10px;margin-bottom:10px;background:rgba(0,212,255,.02)">';
-    // Position header
     html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
       +'<span style="font-size:16px">'+pos.icon+'</span>'
       +'<div><div style="font-size:11px;color:#c8e8ff;letter-spacing:.04em">'+pos.title+'</div>'
-      +'<div style="font-size:8px;color:rgba(200,232,255,.35)">'+pos.desc+' · Effect: +'+pos.amount+'% '+pos.effect+'</div></div>'
-      +'</div>';
-
-    // Current holder
+      +'<div style="font-size:8px;color:rgba(200,232,255,.3)">'+pos.desc+'</div>'
+      +'<div style="font-size:8px;margin-top:2px">Base: '+baseStr+'</div>'
+      +'</div></div>';
     if(current&&!expired){
       html+='<div style="border:1px solid rgba(64,255,128,.25);background:rgba(64,255,128,.04);padding:6px 8px;margin-bottom:8px">'
         +'<div style="font-size:8px;color:#40ff80;letter-spacing:.1em;margin-bottom:3px">CURRENT HOLDER · '+expiresIn+' week'+(expiresIn!==1?'s':'')+' remaining</div>'
-        +'<div style="font-size:11px;color:#c8e8ff">'+current.name+' <span style="font-size:8px;color:rgba(200,232,255,.4)">('+current.age+'y · '+current.trait+')</span></div>'
+        +'<div style="font-size:11px;color:#c8e8ff">'+current.name+' <span style="font-size:8px;color:rgba(200,232,255,.4)">('+current.age+'y)</span></div>'
         +'<div style="font-size:9px;color:'+g.color+'">'+current.ideology+'</div>'
+        +'<div style="font-size:8px;color:rgba(200,232,255,.5);margin-top:2px">Trait: <span style="color:#f0c040">'+current.trait+'</span>'
+        +' — '+(TRAIT_EFFECTS[current.trait]?.desc||'')+'</div>'
+        +'<div style="font-size:8px;margin-top:3px">Net effect: '+bonusToStr(curBonus)+'</div>'
         +'</div>';
     } else if(expired&&current){
       html+='<div style="font-size:8px;color:#ff6b6b;margin-bottom:8px;padding:4px 6px;border:1px solid rgba(255,107,107,.2)">⚠ '+current.name+' has left office — select a new holder</div>';
     } else {
       html+='<div style="font-size:8px;color:rgba(200,232,255,.25);margin-bottom:8px;padding:4px 6px;border:1px dashed rgba(200,232,255,.1)">Vacant — select a candidate</div>';
     }
-
-    // Candidates
-    html+='<div style="font-size:8px;color:rgba(200,232,255,.3);letter-spacing:.1em;margin-bottom:5px">SELECT CANDIDATE</div>';
+    html+='<div style="font-size:8px;color:rgba(200,232,255,.3);letter-spacing:.1em;margin-bottom:5px">CANDIDATES</div>';
     html+='<div style="display:flex;flex-direction:column;gap:5px">';
     candidates.forEach((c,ci)=>{
       const cg=GOVS[c.ideology]||{color:'#888'};
       const isCur=current&&!expired&&current.name===c.name;
-      html+='<div class="pol-card'+(isCur?' active':'')+'" data-poskey="'+posKey+'" data-cidx="'+ci+'" style="cursor:pointer;'+(isCur?'border-color:rgba(64,255,128,.4);background:rgba(64,255,128,.05)':'')+';">'
+      const cBonus=computePosBonus(posKey,c);
+      const trDef=TRAIT_EFFECTS[c.trait]||{desc:'',buffs:[],debuffs:[]};
+      const hasDebuff=trDef.debuffs&&trDef.debuffs.length>0;
+      html+='<div class="pol-card'+(isCur?' active':'')+'" data-poskey="'+posKey+'" data-cidx="'+ci
+        +'" style="cursor:pointer;'+(isCur?'border-color:rgba(64,255,128,.4);background:rgba(64,255,128,.05);':hasDebuff?'border-color:rgba(255,107,107,.15);':'')+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
-        +'<span class="pol-name" style="font-size:10px">'+c.name+(isCur?' ✓':'')+'</span>'
-        +'<span style="font-size:8px;color:rgba(200,232,255,.35)">'+c.age+'y · lasts '+c.lifeWeeks+'w</span>'
+        +'<span style="font-size:10px;color:#c8e8ff">'+c.name+(isCur?' ✓':'')+'</span>'
+        +'<span style="font-size:8px;color:rgba(200,232,255,.35)">'+c.age+'y · '+c.lifeWeeks+'w tenure</span>'
         +'</div>'
-        +'<div class="pol-ideo" style="color:'+cg.color+'">'+c.ideology+' · '+c.trait+'</div>'
+        +'<div style="font-size:8px;color:'+cg.color+';margin-top:1px">'+c.ideology+'</div>'
+        +'<div style="font-size:8px;margin-top:2px">Trait: <span style="color:'+(hasDebuff?'#ffaa55':'#f0c040')+'">'+c.trait+'</span>'
+        +' <span style="color:rgba(200,232,255,.35)">— '+trDef.desc+'</span></div>'
+        +'<div style="font-size:8px;margin-top:3px;padding-top:3px;border-top:1px solid rgba(0,212,255,.08)">'+bonusToStr(cBonus)+'</div>'
         +'</div>';
     });
     html+='</div></div>';
@@ -1184,15 +1305,47 @@ function renderPoliticians(){
 
 function renderLaws(){
   const active=mn.active_laws||[];
-  let html='';
+  const pending=mn.pending_laws||{};
+  const now=currentWeek();
+  const sup=mn.party_support||{};
+  const cats={};
   Object.entries(LAWS).forEach(([key,law])=>{
-    const isActive=active.includes(key);
-    const available=law.govs.includes(mn.gov);
-    html+='<div class="law-card'+(isActive?' active':'')+(available?'" data-lawkey="'+key+'"':'" style="opacity:.4;pointer-events:none"')+'>'
-      +'<div class="law-name">'+law.name+(isActive?' ✓':'')+'</div>'
-      +'<div class="law-effect">'+law.effect+'</div>'
-      +'<div style="font-size:7px;color:rgba(200,232,255,.2);margin-top:3px">'+(available?'Available for '+mn.gov:'Requires: '+law.govs.slice(0,2).join(' / '))+'</div>'
-      +'</div>';
+    if(!cats[law.cat])cats[law.cat]=[];
+    cats[law.cat].push({key,...law});
+  });
+  const catOrder=['Government','Public Health','Freedom','Taxation','Economy','Military','Culture'];
+  let html='<div style="font-size:8px;color:rgba(200,232,255,.3);margin-bottom:8px">Active: <span style="color:#f0c040">'+active.length+'/4</span> · Enacting: <span style="color:#00d4ff">'+Object.keys(pending).length+'</span></div>';
+  catOrder.forEach(cat=>{
+    if(!cats[cat])return;
+    const catColor={Government:'#9b6dff','Public Health':'#40ff80',Freedom:'#5bc4ff',Taxation:'#f0c040',Economy:'#ff9540',Military:'#ff6b6b',Culture:'#ff6bff'}[cat]||'#aaa';
+    html+='<div style="font-size:8px;color:'+catColor+';letter-spacing:.14em;padding:5px 0 4px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px">◈ '+cat.toUpperCase()+'</div>';
+    cats[cat].forEach(({key,name,buffs,debuffs,govs,req_ideology,enact_weeks})=>{
+      const isActive=active.includes(key);
+      const isPending=key in pending;
+      const available=govs.includes(mn.gov);
+      const ideoSupport=sup[mn.gov]||0;
+      const hasIdeoReq=ideoSupport>=req_ideology;
+      const canEnact=available&&hasIdeoReq&&!isActive&&!isPending&&active.length<4;
+      const enactWeeksLeft=isPending?Math.max(0,(pending[key].enact_week||now)-now):0;
+      const borderCol=isActive?'rgba(64,255,128,.4)':isPending?'rgba(0,212,255,.4)':available&&hasIdeoReq?'rgba(240,192,64,.2)':'rgba(255,255,255,.07)';
+      const bg=isActive?'rgba(64,255,128,.04)':isPending?'rgba(0,212,255,.04)':'transparent';
+      const attrs=(canEnact||isActive||isPending)?'data-lawkey="'+key+'"':'';
+      html+='<div class="law-card'+(isActive?' active':'')+'" '+attrs+' style="border-color:'+borderCol+';background:'+bg+';'
+        +(!available||!hasIdeoReq?'opacity:.45;pointer-events:none;':canEnact?'cursor:pointer;':'')
+        +'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<div class="law-name" style="color:'+(isActive?'#40ff80':isPending?'#00d4ff':'#f0c040')+'">'+name+(isActive?' ✓':isPending?' ⟳':enact_weeks>1?' ['+enact_weeks+'w]':'')+'</div>'
+        +'<div style="font-size:7px;">';
+      if(isPending) html+='<span style="color:#00d4ff">Enacting: '+enactWeeksLeft+'w left</span>';
+      else if(isActive) html+='<span style="color:#40ff80">Active</span>';
+      else if(!available) html+='<span style="color:#ff6b6b">Wrong ideology</span>';
+      else if(!hasIdeoReq) html+='<span style="color:#ff8855">Need '+req_ideology+'% sup ('+ideoSupport+'%)</span>';
+      else html+='<span style="color:rgba(200,232,255,.3)">'+enact_weeks+'w to enact</span>';
+      html+='</div></div>'
+        +'<div class="law-effect">'+lawEffectStr({buffs,debuffs})+'</div>'
+        +'<div style="font-size:7px;color:rgba(200,232,255,.2);margin-top:2px">Requires: '+govs.slice(0,2).join(' / ')+(govs.length>2?' +more':'')+'</div>'
+        +'</div>';
+    });
   });
   return html;
 }
@@ -1221,21 +1374,18 @@ window.selectCandidate=async function(posKey,candidateIdx){
   toast('✓ '+chosen.name+' appointed as '+POSITIONS[posKey].title);
 };
 
-// Apply cabinet bonuses to income calculation
+// Apply cabinet bonuses to income calculation — uses computePosBonus (includes traits)
 function cabinetBonus(){
   const cab=getCabinet();
-  const bonus={gold:0,manpower:0,supply:0,stability:0};
+  const bonus={gold:0,manpower:0,supply:0,stability:0,support:0};
   Object.entries(cab).forEach(([posKey,entry])=>{
     if(isPosExpired(posKey))return;
-    const pos=POSITIONS[posKey];
-    if(!pos)return;
-    if(pos.effect==='gold')bonus.gold+=pos.amount;
-    else if(pos.effect==='manpower')bonus.manpower+=pos.amount;
-    else if(pos.effect==='supply')bonus.supply+=pos.amount;
-    else if(pos.effect==='stability')bonus.stability+=pos.amount;
-    else if(pos.effect==='support'){
-      // propagandist: adds support to ruling party via applyPoliticianInfluence
-    }
+    const b=computePosBonus(posKey,entry);
+    bonus.gold+=b.gold||0;
+    bonus.manpower+=b.manpower||0;
+    bonus.supply+=b.supply||0;
+    bonus.stability+=b.stability||0;
+    bonus.support+=b.support||0;
   });
   return bonus;
 }
@@ -1281,34 +1431,100 @@ function renderSupport(){
 
 window.toggleLaw=async function(key){
   if(!mn)return;
+  const law=LAWS[key];if(!law)return;
   const active=[...(mn.active_laws||[])];
-  const idx=active.indexOf(key);
-  if(idx>=0)active.splice(idx,1);
-  else if(active.length>=3){toast('Max 3 active laws');return;}
-  else active.push(key);
-  const{error}=await sb.from('wc_nations').update({active_laws:active}).eq('id',mn.id);
-  if(!error){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast(idx>=0?'Law repealed':'Law enacted');}
-  else toast('Error: '+error.message);
+  const pending={...(mn.pending_laws||{})};
+  const isActive=active.includes(key);
+  const isPending=key in pending;
+  const now=currentWeek();
+  if(isActive){
+    // Repeal instantly
+    const idx=active.indexOf(key);
+    active.splice(idx,1);
+    const{error}=await sb.from('wc_nations').update({active_laws:active}).eq('id',mn.id);
+    if(!error){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('Law repealed: '+law.name);}
+    else toast('Error: '+error.message);
+  } else if(isPending){
+    // Cancel pending
+    delete pending[key];
+    const{error}=await sb.from('wc_nations').update({pending_laws:pending}).eq('id',mn.id);
+    if(!error){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Cancelled: '+law.name);}
+    else toast('Error: '+error.message);
+  } else {
+    // Enact — check ideology requirement
+    const sup=mn.party_support||{};
+    const ideoSup=sup[mn.gov]||0;
+    if(ideoSup<law.req_ideology){toast('Need '+law.req_ideology+'% '+mn.gov+' support (have '+ideoSup+'%)');return;}
+    if(active.length>=4){toast('Max 4 active laws');return;}
+    if(law.enact_weeks<=1){
+      // Instant enact
+      active.push(key);
+      const{error}=await sb.from('wc_nations').update({active_laws:active}).eq('id',mn.id);
+      if(!error){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('Law enacted: '+law.name);}
+      else toast('Error: '+error.message);
+    } else {
+      // Queue pending
+      pending[key]={enact_week:now+law.enact_weeks};
+      const{error}=await sb.from('wc_nations').update({pending_laws:pending}).eq('id',mn.id);
+      if(!error){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Enacting: '+law.name+' ('+law.enact_weeks+' weeks)');}
+      else toast('Error: '+error.message);
+    }
+  }
 };
 
-// Weekly politician influence (propagandist + governing party boost)
+// Check pending laws — call on each tick
+async function processPendingLaws(){
+  if(!mn)return;
+  const pending={...(mn.pending_laws||{})};
+  const active=[...(mn.active_laws||[])];
+  const now=currentWeek();
+  let changed=false;
+  for(const [key,entry] of Object.entries(pending)){
+    if(now>=(entry.enact_week||0)){
+      // Enact this law
+      if(!active.includes(key)&&active.length<4)active.push(key);
+      delete pending[key];
+      changed=true;
+      toast('✓ Law enacted: '+(LAWS[key]?.name||key));
+    }
+  }
+  if(changed){
+    await sb.from('wc_nations').update({active_laws:active,pending_laws:pending}).eq('id',mn.id);
+    mn.active_laws=active;mn.pending_laws=pending;nations[mn.id]=mn;
+    updateNatUI();
+  }
+}
+
+// Weekly politician influence — governing party + propagandist + law effects on support
 function applyPoliticianInfluence(nat){
   const week=currentWeek();
   const lastWeek=nat.last_pol_week||0;
   if(week<=lastWeek)return nat;
-  const ns=nationSeed(nat.id);
   const sup={...nat.party_support||{}};
-  // Governing party always gains a little support
+  // Governing party slowly gains support
   sup[nat.gov]=(sup[nat.gov]||10)+3;
-  // Propagandist cabinet bonus
+  // Propagandist cabinet bonus — now uses computePosBonus
   const cab=nat.cabinet||{};
   const prop=cab.propagandist;
   if(prop&&!isPosExpiredFor(prop,week)){
-    sup[prop.ideology]=(sup[prop.ideology]||0)+(POSITIONS.propagandist.amount||8);
+    const pb=computePosBonus('propagandist',prop);
+    sup[prop.ideology]=(sup[prop.ideology]||0)+(pb.support||8);
+    // Propagandist's governing ideology gets extra
+    sup[nat.gov]=(sup[nat.gov]||10)+2;
   }
-  // Normalize
-  Object.keys(GOVS).forEach(k=>{sup[k]=Math.max(1,Math.min(85,sup[k]||1));});
-  // Slow drain of others
+  // Active laws can affect support
+  const active=nat.active_laws||[];
+  active.forEach(key=>{
+    const law=LAWS[key];if(!law)return;
+    const supBuff=law.buffs?.support||0;
+    const supDebuff=law.debuffs?.support||0;
+    if(supBuff)sup[nat.gov]=(sup[nat.gov]||0)+Math.round(supBuff/5);
+    if(supDebuff){
+      Object.keys(GOVS).forEach(k=>{ if(k!==nat.gov) sup[k]=(sup[k]||0)+Math.round(Math.abs(supDebuff)/Object.keys(GOVS).length); });
+    }
+  });
+  // Normalize: cap and slow drain others
+  Object.keys(GOVS).forEach(k=>{sup[k]=Math.max(1,Math.min(88,sup[k]||1));});
   Object.keys(GOVS).forEach(k=>{if(k!==nat.gov)sup[k]=Math.max(1,(sup[k]||5)-1);});
   return{...nat,party_support:sup,last_pol_week:week};
 }

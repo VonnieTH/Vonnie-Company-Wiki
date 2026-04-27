@@ -243,3 +243,13 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 .pol-body{overflow-y:auto;padding:12px;}
 .pol-body::-webkit-scrollbar{width:3px;}
 .pol-body::-webkit-scrollbar-thumb{background:rgba(240,192,64,.2);}
+/* ── ENHANCED POLITICS v3 ── */
+.law-cat-header{font-size:8px;letter-spacing:.14em;padding:5px 0 4px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px;}
+.pol-card{border:1px solid rgba(0,212,255,.12);padding:7px 9px;margin-bottom:5px;background:rgba(0,212,255,.03);transition:all .15s;}
+.pol-card:hover,.pol-card:active{border-color:rgba(0,212,255,.35);background:rgba(0,212,255,.06);}
+.pol-card.active{border-color:rgba(64,255,128,.4);background:rgba(64,255,128,.04);}
+.law-card{border:1px solid rgba(240,192,64,.15);padding:7px 9px;margin-bottom:5px;transition:all .15s;}
+.law-card:hover{border-color:rgba(240,192,64,.4);background:rgba(240,192,64,.04);}
+.law-card.active{border-color:rgba(64,255,128,.4);background:rgba(64,255,128,.04);}
+.law-name{font-size:10px;color:#f0c040;}
+.law-effect{font-size:8px;color:rgba(200,232,255,.4);margin-top:2px;}
