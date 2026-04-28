@@ -58,7 +58,11 @@
           <div class="gbonus" id="gB">+15% Gold, +10% Stability</div>
         </div>
         <div class="sfield" style="margin-top:8px"><label class="slbl">RULER NAME</label><input class="sinp" id="sR" placeholder="e.g. King Aldric I" maxlength="30"></div>
-        <div class="sfield" style="margin-top:8px"><label class="slbl">ETHNICITY / PEOPLE <span style="opacity:.4">(optional)</label><input class="sinp" id="sEthn" placeholder="e.g. Ironfen Dwarves, Sea Elves..." maxlength="40"></div>
+        <div class="sfield" style="margin-top:8px">
+          <label class="slbl">PRIMARY PEOPLE <span style="opacity:.4">(optional)</span></label>
+          <input class="sinp" id="sEth" placeholder="e.g. Valdren, Keth, Iron Folk..." maxlength="30">
+          <div style="font-size:8px;color:rgba(200,232,255,.25);margin-top:3px;font-family:var(--mono)">The name of your nation's dominant ethnic group or people</div>
+        </div>
         <div class="sfield" style="margin-top:8px"><label class="slbl">BANNER COLOR</label>
           <input type="color" id="sC" value="#f0c040" style="width:50px;height:26px;border:1px solid rgba(0,212,255,.3);background:transparent;cursor:pointer;padding:2px">
         </div>
@@ -110,6 +114,7 @@
       <div class="gtitle">WORLD CONQUEST</div>
       <div class="nname" id="sbN">No Nation</div>
       <div class="ngov" id="sbG"></div>
+      <div style="font-family:var(--mono);font-size:8px;color:#9b6dff;margin-top:2px;text-align:center;display:none" id="sbEth"></div>
       <button id="sbGBtn" onclick="openGovModal()" style="display:none;width:100%;font-family:inherit;font-size:7px;letter-spacing:.1em;padding:3px;border:1px solid rgba(240,192,64,.2);background:transparent;color:rgba(240,192,64,.5);cursor:pointer;margin-top:5px">⚖ REFORM GOVERNMENT</button>
     </div>
     <div class="resblock">
@@ -233,10 +238,6 @@
         <div class="fle-label">RULER NAME</div>
         <input class="fle-inp" id="fleRuler" placeholder="e.g. Queen Velaris I" maxlength="40">
       </div>
-      <div style="margin-top:8px">
-        <div class="fle-label">ETHNICITY / PEOPLE <span style="opacity:.4">(your dominant culture group)</span></div>
-        <input class="fle-inp" id="fleEthn" placeholder="e.g. Sea Elves, Mountain Dwarves..." maxlength="40">
-      </div>
       <div class="fle-cd" id="fleCooldown"></div>
       <button class="fle-submit" id="fleSubmit" onclick="fleSubmit()">[ SAVE CHANGES ]</button>
     </div>
@@ -257,6 +258,7 @@
       <button class="pol-tab active" onclick="polTab('politicians')">POLITICIANS</button>
       <button class="pol-tab" onclick="polTab('laws')">LAWS</button>
       <button class="pol-tab" onclick="polTab('support')">PARTY SUPPORT</button>
+      <button class="pol-tab" onclick="polTab('population')">PEOPLE & LAND</button>
     </div>
     <div class="pol-body" id="polBody"></div>
   </div>
