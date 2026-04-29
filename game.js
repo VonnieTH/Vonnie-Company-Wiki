@@ -86,45 +86,60 @@ function ethnicCooldownRemaining(nat){
 // Show ethnic edit modal
 window.openEthnicModal=function(){
   if(!mn)return;
+  // Remove old modal if exists (refresh state)
+  const old=document.getElementById('ethnicModal');
+  if(old)old.remove();
+
   const can=canChangeEthnic(mn);
   const rem=ethnicCooldownRemaining(mn);
-  const cur=mn.ethnic_group||'';
-  const modal=document.getElementById('ethnicModal');
-  if(!modal){
-    const m=document.createElement('div');
-    m.id='ethnicModal';
-    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:flex;align-items:center;justify-content:center';
-    m.innerHTML=`<div style="background:#0d1117;border:1px solid rgba(0,212,255,.3);padding:24px;min-width:320px;max-width:90vw">
-      <div style="font-family:var(--mono);font-size:11px;color:#00d4ff;letter-spacing:.1em;margin-bottom:14px">DEFINE YOUR PEOPLE</div>
-      \${can
-        ?'<div style="font-size:8px;color:rgba(200,232,255,.35);margin-bottom:8px;font-family:var(--mono)">Enter the name of your nation&#39;s primary ethnic group.<br>After setting, you cannot change this for '+ETHNIC_COOLDOWN_DAYS+' days.</div>'
-        :'<div style="font-size:8px;color:#ff6b6b;margin-bottom:8px;font-family:var(--mono)">Cooldown: '+rem+' days remaining before you can change.</div>'
-      }
-      <input id="ethnicInp" style="font-family:var(--mono);font-size:12px;width:100%;box-sizing:border-box;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.25);color:#c8e8ff;padding:8px;margin-bottom:12px;outline:none" 
-        placeholder="e.g. Valdren, Iron Folk, Sea Kin..." maxlength="30" value="\${cur}" \${can?'':'disabled'}>
-      <div style="display:flex;gap:8px">
-        \${can?'<button onclick="saveEthnic()" style="font-family:var(--mono);font-size:10px;flex:1;padding:8px;border:1px solid var(--cyan);background:rgba(0,212,255,.1);color:var(--cyan);cursor:pointer">SAVE</button>':''}
-        <button onclick="document.getElementById('ethnicModal').remove()" style="font-family:var(--mono);font-size:10px;flex:1;padding:8px;border:1px solid rgba(200,232,255,.2);background:transparent;color:rgba(200,232,255,.5);cursor:pointer">CLOSE</button>
-      </div>
-    </div>`;
-    document.body.appendChild(m);
-  } else {
-    modal.style.display='flex';
-  }
+  // ethnic_groups is now an array stored as JSON in DB, or fallback to string
+  let cur=[];
+  if(Array.isArray(mn.ethnic_groups))cur=mn.ethnic_groups;
+  else if(mn.ethnic_group)cur=[mn.ethnic_group];
+
+  const infoHtml=can
+    ?'<div style="font-size:8px;color:rgba(200,232,255,.35);margin-bottom:8px;line-height:1.6">Define the ethnic groups/peoples of your nation.<br>You can list multiple groups (one per line), like in Victoria 3.<br>Cooldown: '+ETHNIC_COOLDOWN_DAYS+' days after saving.</div>'
+    :'<div style="font-size:8px;color:#ff6b6b;margin-bottom:8px;line-height:1.6">'+rem+' days remaining before you can change ethnic groups.</div>';
+
+  const disabledAttr=can?'':'disabled style="opacity:.4;cursor:not-allowed"';
+  const saveBtn=can?'<button onclick="saveEthnic()" style="font-family:var(--mono);font-size:10px;flex:1;padding:9px;border:1px solid #00d4ff;background:rgba(0,212,255,.1);color:#00d4ff;cursor:pointer;letter-spacing:.08em">[ SAVE ]</button>':'';
+
+  const m=document.createElement('div');
+  m.id='ethnicModal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.innerHTML='<div style="background:#0d1117;border:1px solid rgba(0,212,255,.35);box-shadow:0 0 40px rgba(0,212,255,.1);padding:24px 22px;min-width:340px;max-width:95vw;font-family:var(--mono)">'
+    +'<div style="font-size:11px;color:#00d4ff;letter-spacing:.1em;margin-bottom:12px">👥 DEFINE YOUR PEOPLE</div>'
+    +infoHtml
+    +'<div style="font-size:8px;color:rgba(200,232,255,.3);letter-spacing:.1em;margin-bottom:5px">ETHNIC GROUPS <span style="color:rgba(200,232,255,.2)">(one per line, max 5)</span></div>'
+    +'<textarea id="ethnicInp" '+disabledAttr+' style="font-family:var(--mono);font-size:11px;width:100%;box-sizing:border-box;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.25);color:#c8e8ff;padding:8px;margin-bottom:6px;outline:none;resize:vertical;min-height:90px;line-height:1.6" placeholder="e.g. Valdren&#10;Iron Folk&#10;Sea Kin...">'+cur.join('\n')+'</textarea>'
+    +'<div style="font-size:7px;color:rgba(200,232,255,.2);margin-bottom:12px">Examples: Humans, Mountain Dwarves, Sylvan Elves, River Goblins...</div>'
+    +'<div style="display:flex;gap:8px">'
+    +saveBtn
+    +'<button onclick="document.getElementById(&quot;ethnicModal&quot;).remove()" style="font-family:var(--mono);font-size:10px;flex:1;padding:9px;border:1px solid rgba(200,232,255,.2);background:transparent;color:rgba(200,232,255,.5);cursor:pointer;letter-spacing:.08em">[ CLOSE ]</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(m);
 };
 window.saveEthnic=async function(){
-  const val=document.getElementById('ethnicInp')?.value.trim();
-  if(!val){toast('Enter a people name');return;}
+  const raw=document.getElementById('ethnicInp')?.value||'';
+  const groups=raw.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,5);
+  if(!groups.length){toast('Enter at least one ethnic group');return;}
   if(!canChangeEthnic(mn)){toast('Cooldown active');return;}
   const now=new Date().toISOString();
-  const{error}=await sb.from('wc_nations').update({ethnic_group:val,ethnic_group_set_at:now}).eq('id',mn.id);
+  // Save as array in ethnic_groups, keep ethnic_group as primary (first) for backwards compat
+  const{error}=await sb.from('wc_nations').update({
+    ethnic_groups:groups,
+    ethnic_group:groups[0],
+    ethnic_group_set_at:now
+  }).eq('id',mn.id);
   if(error){toast('Error: '+error.message);return;}
-  mn.ethnic_group=val;mn.ethnic_group_set_at=now;
+  mn.ethnic_groups=groups;mn.ethnic_group=groups[0];mn.ethnic_group_set_at=now;
   nations[mn.id]=mn;
   document.getElementById('ethnicModal')?.remove();
-  toast('People name set: '+val);
+  toast('\u2713 Peoples set: '+groups.join(', '));
   updateNatUI();
 };
+
 
 // ── MIGRATION SYSTEM ──────────────────────────────────────────────────────
 // Each week, some pop migrates between nations based on laws + stability.
@@ -175,7 +190,7 @@ const mapImg=document.getElementById('mi');
 const ma=document.getElementById('ma');
 let zoom=1,panX=0,panY=0;
 let dragging=false,lastX=0,lastY=0;
-let dragMoved=false,dragStartX=0,dragStartY=0,dragPanX=0,dragPanY=0,pendClick=null;
+let dragMoved=false,dragStartX=0,dragStartY=0,dragPanX=0,dragPanY=0,pendClick=null,dragStartedOnCanvas=false;
 let pinchDist=0;
 
 function mapH(){return ma.clientHeight-32;}
@@ -233,7 +248,7 @@ ma.addEventListener('wheel',e=>{
 // Mouse drag
 canvas.addEventListener('mousedown',e=>{
   if(e.button===1||e.button===2){dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.classList.add('grabbing');return;}
-  if(e.button===0){dragMoved=false;dragStartX=e.clientX;dragStartY=e.clientY;dragPanX=panX;dragPanY=panY;}
+  if(e.button===0){dragMoved=false;dragStartedOnCanvas=true;dragStartX=e.clientX;dragStartY=e.clientY;dragPanX=panX;dragPanY=panY;}
 });
 window.addEventListener('mousemove',e=>{
   if(dragging){panX+=e.clientX-lastX;panY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;clampPan();draw();return;}
@@ -250,11 +265,13 @@ window.addEventListener('mouseup',e=>{
   if(e.button===1||e.button===2){dragging=false;canvas.classList.remove('grabbing');return;}
   if(e.button===0){
     canvas.classList.remove('grabbing');
-    if(!dragMoved){
+    // Only handle as map click if drag started ON the canvas (not inside a modal/overlay)
+    if(!dragMoved && dragStartedOnCanvas){
       const r=canvas.getBoundingClientRect();
       handleClick(dragStartX-r.left,dragStartY-r.top);
     }
     dragMoved=false;
+    dragStartedOnCanvas=false;
   }
 });
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -346,7 +363,7 @@ function showTip(cx,cy,mx,my){
       +'<div style="font-size:8px;color:rgba(200,232,255,.45);margin-top:1px">'+p.terrain[0].toUpperCase()+p.terrain.slice(1)+' · 👥 '+_pop+'k</div>'
       +'<div style="font-size:8px;color:'+_ppl.color+';margin-top:1px">'+_ppl.name+' peoples</div>'
       +(_resStr?'<div style="font-size:8px;color:#f0c040;margin-top:2px">'+_resStr+'</div>':'')
-      +(_ownerNat?.ethnic_group?'<div style="font-size:7px;color:#9b6dff;margin-top:1px">'+_ownerNat.ethnic_group+'</div>':'');
+      +((_ownerNat?.ethnic_groups||(_ownerNat?.ethnic_group?[_ownerNat.ethnic_group]:[])).length?'<div style="font-size:7px;color:#9b6dff;margin-top:1px">'+(_ownerNat.ethnic_groups||[_ownerNat.ethnic_group]).join(', ')+'</div>':'');
     tip.style.cssText='display:block;left:'+(cx+14)+'px;top:'+(cy-38)+'px;position:fixed;background:rgba(10,12,24,.95);border:1px solid rgba(0,212,255,.3);padding:6px 10px;pointer-events:none;z-index:600;min-width:130px;font-family:var(--mono);';
   }else tip.style.display='none';
 }
@@ -923,7 +940,8 @@ function showPanel(p){
   const _ppop=getProvPopEst(p.id);
   const _pres=getProvResources(p.id);
   const _resH=_pres.map(r=>'<span style="margin-right:5px">'+r[0]+' '+r[1]+'</span>').join('');
-  const _ethStr=owner?.ethnic_group?'<div class="irow"><span class="ik">PEOPLE</span><span class="iv" style="color:#9b6dff">'+owner.ethnic_group+'</span></div>':'';
+  const _ethGroups=owner?(owner.ethnic_groups||(owner.ethnic_group?[owner.ethnic_group]:[])):[];
+  const _ethStr=_ethGroups.length?'<div class="irow"><span class="ik">PEOPLE</span><span class="iv" style="color:#9b6dff">'+_ethGroups.join(', ')+'</span></div>':'';
   let html=[capMark,
     row('TERRAIN',p.terrain[0].toUpperCase()+p.terrain.slice(1)),
     row('OWNER',owner?owner.name:'Unclaimed',owner?(isOwn?'gd':'rd'):'cy'),
@@ -1221,10 +1239,14 @@ setupMobile();
 window.toast=function(m){const t=document.getElementById('toast');t.textContent=m;t.className='show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);};
 
 // ── SQL SCHEMA HINT ────────────────────────────────────────
-// Run in Supabase SQL Editor: ensure last_tick_at column exists
+// Run ALL of these in Supabase SQL Editor to enable all features:
 // ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS last_tick_at TIMESTAMPTZ DEFAULT NOW();
+// ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS active_laws JSONB DEFAULT '[]'::jsonb;
+// ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS pending_laws JSONB DEFAULT '{}'::jsonb;
+// ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS cabinet JSONB DEFAULT '{}'::jsonb;
 // ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_group TEXT DEFAULT NULL;
 // ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_group_set_at TIMESTAMPTZ DEFAULT NULL;
+// ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_groups JSONB DEFAULT '[]'::jsonb;
 // ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS migrant_pop INTEGER DEFAULT 0;
 
 // ── INIT ───────────────────────────────────────────────────
@@ -1606,8 +1628,7 @@ window.selectCandidate=async function(posKey,candidateIdx){
   if(!chosen)return;
   const cabinet={...getCabinet()};
   cabinet[posKey]={...chosen,week_selected:week};
-  const{error}=await sb.from('wc_nations').update({cabinet}).eq('id',mn.id);
-  if(error){toast('Error: '+error.message);return;}
+  if(!await updateLaws({cabinet}))return;
   mn.cabinet=cabinet;nations[mn.id]=mn;
   renderPolTab();
   toast('✓ '+chosen.name+' appointed as '+POSITIONS[posKey].title);
@@ -1689,8 +1710,9 @@ function renderPeopleTab(){
   // YOUR PEOPLE block
   html+='<div style="border:1px solid rgba(155,109,255,.25);padding:10px;margin-bottom:10px;background:rgba(155,109,255,.03)">';
   html+='<div style="font-size:9px;color:#9b6dff;letter-spacing:.12em;margin-bottom:8px">◈ YOUR PEOPLE</div>';
-  if(mn.ethnic_group){
-    html+='<div style="font-size:18px;color:#9b6dff;margin-bottom:2px">'+mn.ethnic_group+'</div>';
+  const myGroups=mn.ethnic_groups||(mn.ethnic_group?[mn.ethnic_group]:[]);
+  if(myGroups.length){
+    html+=myGroups.map(g=>'<div style="font-size:14px;color:#9b6dff;margin-bottom:3px;padding:4px 8px;border:1px solid rgba(155,109,255,.2);display:inline-block;margin-right:6px">'+g+'</div>').join('');
     html+='<div style="font-size:8px;color:rgba(200,232,255,.35)">Primary people of '+mn.name+'</div>';
     html+='<div style="margin-top:6px">';
     if(can){
@@ -1784,6 +1806,25 @@ function renderSupport(){
   return html;
 }
 
+// Safe law update — catches 400 if column missing and shows a helpful hint
+async function updateLaws(updates){
+  const{error}=await sb.from('wc_nations').update(updates).eq('id',mn.id);
+  if(error){
+    if(error.code==='PGRST204'||error.message?.includes('column')||error.message?.includes('400')){
+      toast('⚠ Run SQL first: see console for schema');
+      console.warn('Missing columns! Run in Supabase SQL Editor:\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS active_laws JSONB DEFAULT \'[]\'::\jsonb;\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS pending_laws JSONB DEFAULT \'{}\'::\jsonb;\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_groups JSONB DEFAULT \'[]\'::\jsonb;\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_group TEXT DEFAULT NULL;\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS ethnic_group_set_at TIMESTAMPTZ DEFAULT NULL;\n'
+        +'ALTER TABLE wc_nations ADD COLUMN IF NOT EXISTS cabinet JSONB DEFAULT \'{}\'::\jsonb;');
+    } else toast('Error: '+error.message);
+    return false;
+  }
+  return true;
+}
+
 window.toggleLaw=async function(key){
   if(!mn)return;
   const law=LAWS[key];if(!law)return;
@@ -1793,36 +1834,22 @@ window.toggleLaw=async function(key){
   const isPending=key in pending;
   const now=currentWeek();
   if(isActive){
-    // Repeal instantly
-    const idx=active.indexOf(key);
-    active.splice(idx,1);
-    const{error}=await sb.from('wc_nations').update({active_laws:active}).eq('id',mn.id);
-    if(!error){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('Law repealed: '+law.name);}
-    else toast('Error: '+error.message);
+    const idx=active.indexOf(key);active.splice(idx,1);
+    if(await updateLaws({active_laws:active})){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('Law repealed: '+law.name);}
   } else if(isPending){
-    // Cancel pending
     delete pending[key];
-    const{error}=await sb.from('wc_nations').update({pending_laws:pending}).eq('id',mn.id);
-    if(!error){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Cancelled: '+law.name);}
-    else toast('Error: '+error.message);
+    if(await updateLaws({pending_laws:pending})){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Cancelled: '+law.name);}
   } else {
-    // Enact — check ideology requirement
     const sup=mn.party_support||{};
     const ideoSup=sup[mn.gov]||0;
     if(ideoSup<law.req_ideology){toast('Need '+law.req_ideology+'% '+mn.gov+' support (have '+ideoSup+'%)');return;}
     if(active.length>=4){toast('Max 4 active laws');return;}
     if(law.enact_weeks<=1){
-      // Instant enact
       active.push(key);
-      const{error}=await sb.from('wc_nations').update({active_laws:active}).eq('id',mn.id);
-      if(!error){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('Law enacted: '+law.name);}
-      else toast('Error: '+error.message);
+      if(await updateLaws({active_laws:active})){mn.active_laws=active;nations[mn.id]=mn;renderPolTab();toast('✓ Law enacted: '+law.name);}
     } else {
-      // Queue pending
       pending[key]={enact_week:now+law.enact_weeks};
-      const{error}=await sb.from('wc_nations').update({pending_laws:pending}).eq('id',mn.id);
-      if(!error){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Enacting: '+law.name+' ('+law.enact_weeks+' weeks)');}
-      else toast('Error: '+error.message);
+      if(await updateLaws({pending_laws:pending})){mn.pending_laws=pending;nations[mn.id]=mn;renderPolTab();toast('Enacting: '+law.name+' ('+law.enact_weeks+' weeks)');}
     }
   }
 };
