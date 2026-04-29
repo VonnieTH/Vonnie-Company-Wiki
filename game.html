@@ -59,9 +59,9 @@
         </div>
         <div class="sfield" style="margin-top:8px"><label class="slbl">RULER NAME</label><input class="sinp" id="sR" placeholder="e.g. King Aldric I" maxlength="30"></div>
         <div class="sfield" style="margin-top:8px">
-          <label class="slbl">PRIMARY PEOPLE <span style="opacity:.4">(optional)</span></label>
-          <input class="sinp" id="sEth" placeholder="e.g. Valdren, Keth, Iron Folk..." maxlength="30">
-          <div style="font-size:8px;color:rgba(200,232,255,.25);margin-top:3px;font-family:var(--mono)">The name of your nation's dominant ethnic group or people</div>
+          <label class="slbl">PRIMARY PEOPLE <span style="opacity:.4;font-size:8px">(optional)</span></label>
+          <input class="sinp" id="sEth" placeholder="e.g. Valdren, Iron Folk, Sea Kin..." maxlength="30">
+          <div style="font-size:8px;color:rgba(200,232,255,.25);margin-top:3px;font-family:var(--mono)">The name of your nation&#39;s dominant ethnic group — can be changed later (30-day cooldown)</div>
         </div>
         <div class="sfield" style="margin-top:8px"><label class="slbl">BANNER COLOR</label>
           <input type="color" id="sC" value="#f0c040" style="width:50px;height:26px;border:1px solid rgba(0,212,255,.3);background:transparent;cursor:pointer;padding:2px">
@@ -114,7 +114,6 @@
       <div class="gtitle">WORLD CONQUEST</div>
       <div class="nname" id="sbN">No Nation</div>
       <div class="ngov" id="sbG"></div>
-      <div style="font-family:var(--mono);font-size:8px;color:#9b6dff;margin-top:2px;text-align:center;display:none" id="sbEth"></div>
       <button id="sbGBtn" onclick="openGovModal()" style="display:none;width:100%;font-family:inherit;font-size:7px;letter-spacing:.1em;padding:3px;border:1px solid rgba(240,192,64,.2);background:transparent;color:rgba(240,192,64,.5);cursor:pointer;margin-top:5px">⚖ REFORM GOVERNMENT</button>
     </div>
     <div class="resblock">
@@ -177,7 +176,7 @@
       <button class="zbtn" onclick="resetZoom()" style="font-size:9px">⟳</button>
     </div>
 <!-- Legend removed -->
-    <div id="tip"><div id="tipN"></div><div id="tipO"></div><div id="tipT"></div></div>
+    <div id="tip"></div>
   </div>
 
   <div id="rp">
