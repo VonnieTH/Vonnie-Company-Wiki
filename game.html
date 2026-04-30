@@ -192,9 +192,21 @@
     <div id="tip"></div>
   </div>
 
-  <div id="rp">
-    <div class="rph" id="rpH">SELECT A PROVINCE</div>
-    <div class="rpb" id="rpB"><div style="font-size:9px;color:rgba(200,232,255,.3);padding:16px 0;text-align:center;letter-spacing:.08em">Click any province on the map</div></div>
+  <!-- Province floating panel (HoI4 bottom-left style) -->
+  <div id="provPanel">
+    <div id="provPanelInner">
+      <button id="provPanelClose" onclick="closeProvPanel()">✕</button>
+      <div id="rpH"></div>
+      <div id="rpB"></div>
+    </div>
+  </div>
+
+  <!-- Diplomacy floating panel -->
+  <div id="diploPanel">
+    <div id="diploPanelInner">
+      <button id="diploPanelClose" onclick="closeDiploPanel()">✕</button>
+      <div id="diploBody"></div>
+    </div>
   </div>
 </div>
 

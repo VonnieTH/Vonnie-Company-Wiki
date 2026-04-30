@@ -50,11 +50,44 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 #mc{display:block;position:absolute;top:32px;left:0;cursor:grab;image-rendering:pixelated;}
 #mc.grabbing{cursor:grabbing;}
 #mi{display:none;}
-/* ═══════ RIGHT PANEL — HoI4 STYLE ═══════ */
-#rp{width:248px;flex-shrink:0;background:#080c14;border-left:1px solid rgba(0,212,255,.12);display:flex;flex-direction:column;overflow-y:auto;z-index:10;transition:transform .25s ease;}
-#rp::-webkit-scrollbar{width:2px;}#rp::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);}
-.rph{background:rgba(0,212,255,.08);border-bottom:2px solid rgba(0,212,255,.25);padding:6px 10px;font-size:9px;color:#00d4ff;letter-spacing:.12em;flex-shrink:0;display:flex;align-items:center;gap:5px;}
-.rph-cap{color:#f0c040;font-size:10px;}
+/* ═══════ PROVINCE FLOATING PANEL — HoI4 BOTTOM-LEFT ═══════ */
+#rp{display:none !important;} /* removed */
+#provPanel{
+  position:fixed;
+  left:218px; bottom:-400px;
+  width:300px; max-height:70vh;
+  z-index:400;
+  transition:bottom .28s cubic-bezier(.22,.8,.36,1);
+  pointer-events:none;
+}
+#provPanel.open{bottom:0;pointer-events:all;}
+#provPanelInner{
+  background:#080c14;
+  border:1px solid rgba(0,212,255,.25);
+  border-bottom:none;
+  box-shadow:4px -4px 24px rgba(0,0,0,.7);
+  display:flex; flex-direction:column;
+  max-height:70vh; overflow:hidden;
+  position:relative;
+}
+#provPanelClose{
+  position:absolute;top:6px;right:8px;
+  background:none;border:none;color:rgba(200,232,255,.35);
+  font-size:11px;cursor:pointer;z-index:5;padding:2px 4px;
+  transition:color .15s;
+}
+#provPanelClose:hover{color:#ff6b6b;}
+#rpH{
+  background:rgba(0,212,255,.08);
+  border-bottom:2px solid rgba(0,212,255,.3);
+  padding:7px 28px 7px 10px;
+  font-size:10px;color:#00d4ff;letter-spacing:.12em;
+  flex-shrink:0;
+}
+.rph-cap{color:#f0c040;}
+#rpB{overflow-y:auto;flex:1;}
+#rpB::-webkit-scrollbar{width:2px;}
+#rpB::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);}
 .rpb{padding:0;}
 
 /* section headers */
@@ -330,3 +363,115 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 
 /* ═══════ SBFLAGWRAP COMPAT ═══════ */
 #sbFlagWrap{display:none !important;}
+/* ═══════ DIPLOMACY FLOATING PANEL ═══════ */
+#diploPanel{
+  position:fixed;
+  left:218px; bottom:-500px;
+  width:300px; max-height:75vh;
+  z-index:401;
+  transition:bottom .28s cubic-bezier(.22,.8,.36,1);
+  pointer-events:none;
+}
+#diploPanel.open{bottom:0;pointer-events:all;}
+#diploPanelInner{
+  background:#0c0a14;
+  border:1px solid rgba(155,109,255,.3);
+  border-bottom:none;
+  box-shadow:4px -4px 28px rgba(0,0,0,.75);
+  display:flex;flex-direction:column;
+  max-height:75vh;overflow:hidden;position:relative;
+}
+#diploPanelClose{
+  position:absolute;top:6px;right:8px;
+  background:none;border:none;color:rgba(200,232,255,.35);
+  font-size:11px;cursor:pointer;z-index:5;padding:2px 4px;
+}
+#diploPanelClose:hover{color:#ff6b6b;}
+#diploBody{overflow-y:auto;flex:1;padding:0;}
+#diploBody::-webkit-scrollbar{width:2px;}
+#diploBody::-webkit-scrollbar-thumb{background:rgba(155,109,255,.25);}
+
+/* Diplomacy header bar */
+.diplo-header{
+  background:rgba(155,109,255,.1);
+  border-bottom:2px solid rgba(155,109,255,.35);
+  padding:7px 28px 7px 10px;
+  font-size:9px;color:#9b6dff;letter-spacing:.14em;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.diplo-flag-sm{height:18px;border:1px solid rgba(255,255,255,.15);}
+
+/* Nation hero card inside diplo panel */
+.diplo-hero{
+  display:flex;gap:0;border-bottom:1px solid rgba(155,109,255,.12);
+}
+.diplo-hero-flag{
+  width:80px;height:52px;object-fit:cover;flex-shrink:0;
+  border-right:1px solid rgba(155,109,255,.15);
+}
+.diplo-hero-flag-placeholder{
+  width:80px;height:52px;background:rgba(155,109,255,.08);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  border-right:1px solid rgba(155,109,255,.12);
+}
+.diplo-hero-info{flex:1;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;gap:3px;}
+.diplo-hero-name{font-size:12px;color:#c8e8ff;letter-spacing:.04em;}
+.diplo-hero-gov{font-size:8px;letter-spacing:.08em;}
+.diplo-hero-leader{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.diplo-hero-portrait{width:28px;height:36px;object-fit:cover;object-position:top;border:1px solid rgba(240,192,64,.3);}
+.diplo-hero-ruler{font-size:9px;color:#f0c040;}
+
+/* Diplo stats grid */
+.diplo-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(155,109,255,.06);border-bottom:1px solid rgba(155,109,255,.1);}
+.diplo-stat-cell{background:#0c0a14;padding:6px 10px;}
+.diplo-stat-lbl{font-size:7px;color:rgba(200,232,255,.3);letter-spacing:.12em;margin-bottom:2px;}
+.diplo-stat-val{font-size:10px;color:#c8e8ff;}
+
+/* Diplo action list */
+.diplo-act-list{padding:8px;}
+.diplo-act-btn{
+  width:100%;font-family:inherit;font-size:8px;letter-spacing:.08em;
+  padding:6px 10px;border:1px solid rgba(155,109,255,.25);
+  background:transparent;color:rgba(200,232,255,.6);
+  cursor:pointer;transition:all .15s;text-align:left;
+  margin-bottom:3px;display:flex;align-items:center;gap:6px;
+}
+.diplo-act-btn:hover{background:rgba(155,109,255,.1);border-color:#9b6dff;color:#c8e8ff;}
+.diplo-act-btn.dng{border-color:rgba(255,107,107,.25);color:rgba(255,107,107,.6);}
+.diplo-act-btn.dng:hover{background:rgba(255,107,107,.08);border-color:#ff6b6b;color:#ff6b6b;}
+.diplo-act-icon{font-size:12px;width:18px;text-align:center;flex-shrink:0;}
+.diplo-act-label{flex:1;}
+.diplo-act-phase{font-size:7px;color:rgba(200,232,255,.25);margin-left:auto;}
+
+/* irow / section styles for province panel */
+.rp-section{background:rgba(0,0,0,.2);border-bottom:1px solid rgba(0,212,255,.06);}
+.rp-section-title{font-size:7px;color:rgba(200,232,255,.25);letter-spacing:.2em;padding:4px 10px 3px;background:rgba(0,212,255,.04);border-bottom:.5px solid rgba(0,212,255,.05);}
+.rp-nation-banner{display:flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(240,192,64,.03);border-bottom:.5px solid rgba(240,192,64,.07);}
+.rp-flag{height:18px;border:1px solid rgba(255,255,255,.15);flex-shrink:0;}
+.rp-nation-name{font-size:10px;color:#f0c040;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rp-portrait{width:20px;height:26px;object-fit:cover;object-position:top;border:1px solid rgba(240,192,64,.3);}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:4px 10px;border-bottom:.5px solid rgba(0,212,255,.04);font-size:9px;}
+.irow:last-child{border-bottom:none;}
+.ik{color:rgba(200,232,255,.35);font-size:8px;letter-spacing:.06em;}
+.iv{color:#c8e8ff;}
+.iv.cy{color:#00d4ff;}.iv.gd{color:#f0c040;}.iv.gr{color:#40ff80;}.iv.rd{color:#ff6b6b;}
+.rdiv{height:1px;background:rgba(0,212,255,.06);margin:3px 0;}
+.rsec{font-size:7px;color:rgba(200,232,255,.25);letter-spacing:.2em;padding:4px 10px 3px;}
+.pop-bar-wrap{padding:4px 10px 6px;}
+.pop-bar-label{display:flex;justify-content:space-between;font-size:7px;color:rgba(200,232,255,.35);margin-bottom:3px;}
+.pop-bar-track{height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;display:flex;}
+.pop-seg{height:100%;transition:width .5s ease;}
+.res-chips{display:flex;flex-wrap:wrap;gap:3px;padding:4px 10px 7px;}
+.res-chip{font-size:8px;padding:2px 6px;background:rgba(240,192,64,.07);border:1px solid rgba(240,192,64,.2);color:#f0c040;}
+.yield-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;padding:5px 8px;}
+.yield-cell{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.07);padding:5px 4px;text-align:center;}
+.yield-icon{font-size:11px;}
+.yield-val{font-size:9px;color:#40ff80;margin-top:1px;}
+.yield-lbl{font-size:7px;color:rgba(200,232,255,.25);letter-spacing:.06em;}
+.act-section{padding:6px 8px;display:flex;flex-direction:column;gap:3px;}
+
+/* Province panel on mobile — full width bottom sheet */
+@media(max-width:768px){
+  #provPanel,#diploPanel{left:0;width:100%;max-height:55vh;}
+  #rp{display:none !important;}
+}
