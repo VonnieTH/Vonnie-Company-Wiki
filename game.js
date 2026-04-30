@@ -1267,14 +1267,19 @@ function closePanels(){
   document.getElementById('sbOverlay').style.display='none';
 };
 function setupMobile(){
-  const mb=document.getElementById('mobSbBtn'),mrb=document.getElementById('mobRpBtn');
+  const mb=document.getElementById('mobSbBtn');
+  const mrb=document.getElementById('mobRpBtn'); // may not exist
   const stb=document.getElementById('sbTogBtn');
-  if(window.innerWidth<=768){mb.style.display='block';mrb.style.display='block';if(stb)stb.style.display='none';}
-  else{
-    mb.style.display='none';mrb.style.display='none';
+  if(window.innerWidth<=768){
+    if(mb)mb.style.display='block';
+    if(mrb)mrb.style.display='block';
+    if(stb)stb.style.display='none';
+  } else {
+    if(mb)mb.style.display='none';
+    if(mrb)mrb.style.display='none';
     if(stb)stb.style.display='block';
     document.getElementById('sb').classList.remove('open');
-    document.getElementById('rp').classList.remove('open');
+    const rp=document.getElementById('rp');if(rp)rp.classList.remove('open');
     document.getElementById('sbOverlay').style.display='none';
   }
 }
