@@ -1106,12 +1106,13 @@ function updateSbLawsTab(){
 }
 
 window.sbSwitchTab=function(idx){
-  for(let i=0;i<3;i++){
+  for(let i=0;i<4;i++){
     const t=document.getElementById('sbTab'+i);
     const p=document.getElementById('sbPanel'+i);
     if(t) t.classList.toggle('active',i===idx);
     if(p) p.classList.toggle('active',i===idx);
   }
+  if(idx===3) renderNavalTab();
 };
 
 function refreshSb(){
@@ -1133,37 +1134,39 @@ function showPanel(p){
   const oid=ownership[p.id], owner=oid?nations[oid]:null;
   const isOwn=mn&&oid===mn.id;
   const isDiplo=!isOwn&&!!oid&&!!mn;
-  const isUncl=!oid;
 
   const g=id=>document.getElementById(id);
   const noNat=g('noNat'), polPanel=g('sbPolPanel'), diploPanel=g('sbDiploPanel'), unclPanel=g('sbUnclaimedPanel');
 
-  // Hide all, show correct
+  // Always hide all panels first
+  if(noNat) noNat.style.display='none';
+  if(polPanel) polPanel.style.display='none';
+  if(diploPanel) diploPanel.style.display='none';
+  if(unclPanel) unclPanel.style.display='none';
+
   if(isOwn){
-    if(noNat) noNat.style.display='none';
-    if(diploPanel) diploPanel.style.display='none';
-    if(unclPanel) unclPanel.style.display='none';
-    if(polPanel){polPanel.style.display='';}
+    // Own province — show political panel
+    if(polPanel) polPanel.style.display='';
     updateSbPolPanel();
-    // Switch to provinces tab and highlight
     sbSwitchTab(1);
     refreshSb();
   } else if(isDiplo && owner){
-    if(noNat) noNat.style.display='none';
-    if(polPanel) polPanel.style.display='none';
-    if(unclPanel) unclPanel.style.display='none';
-    if(diploPanel){diploPanel.style.display='';}
+    // Foreign province — show diplomacy panel
+    if(diploPanel) diploPanel.style.display='';
     showSbDiplo(p, owner, oid);
+  } else if(mn){
+    // Unclaimed land + has own nation — show own political panel (not diplo)
+    if(polPanel) polPanel.style.display='';
+    updateSbPolPanel();
+    // Show unclaimed info inside provinces tab
+    sbSwitchTab(1);
+    refreshSb();
+    // Brief toast about the unclaimed province
+    showSbUnclaimedInline(p);
   } else {
-    // Unclaimed or no nation
-    if(polPanel&&mn) polPanel.style.display='';
-    else{
-      if(noNat) noNat.style.display='none';
-      if(polPanel) polPanel.style.display='none';
-      if(diploPanel) diploPanel.style.display='none';
-      if(unclPanel){unclPanel.style.display='';}
-      showSbUnclaimed(p);
-    }
+    // No nation at all — show unclaimed panel
+    if(unclPanel) unclPanel.style.display='';
+    showSbUnclaimed(p);
   }
 }
 
@@ -1226,6 +1229,30 @@ function showSbUnclaimed(p){
       acts.innerHTML=btn('▶ Claim Province (30 Gold)','prim','claimP('+p.id+')',!adj,adj?'':'Not adjacent');
     }
   }
+}
+
+// Show unclaimed province info inline at bottom of own province list
+function showSbUnclaimedInline(p){
+  const _pp=getProvPeople(p.id);
+  const _pop=getProvPopEst(p.id);
+  const adj=isAdj(p.id);
+  const el=document.getElementById('sbProvList');
+  if(!el) return;
+  // Append unclaimed card below province list
+  const existing=el.querySelector('.sb-uncl-inline');
+  if(existing) existing.remove();
+  const div=document.createElement('div');
+  div.className='sb-uncl-inline';
+  div.innerHTML='<div class="sb-uncl-inline-hdr">UNCLAIMED PROVINCE</div>'
+    +'<div class="sb-uncl-inline-name">🗺 '+p.name+'</div>'
+    +'<div class="sb-uncl-inline-sub">'+p.terrain[0].toUpperCase()+p.terrain.slice(1)+' · ~'+_pop+'k pop · '+_pp.name+' peoples</div>'
+    +'<div class="sb-uncl-inline-yields">'
+    +'<span>💰 '+p.gold+'</span><span>⚔ '+p.manpower+'</span><span>⚙ '+p.supply+'</span>'
+    +'</div>'
+    +(adj
+      ? '<button class="sb-uncl-inline-btn" onclick="claimP('+p.id+')">▶ Claim (30 Gold)</button>'
+      : '<div class="sb-uncl-inline-na">Not adjacent to your territory</div>');
+  el.appendChild(div);
 }
 
 window.selProvById=function(pid){closeDiploPanel&&closeDiploPanel();selProv=byId[pid];draw();showPanel(selProv);refreshSb();};
@@ -1296,6 +1323,135 @@ function updateEdgeBtn(){
   }
 }
 
+
+// ══ NAVAL SYSTEM ═══════════════════════════════════════════
+
+// Get coast provinces owned by player
+function getCoastProvs(){
+  if(!mn) return [];
+  return Object.entries(ownership)
+    .filter(([pid,oid])=>oid===mn.id)
+    .map(([pid])=>byId[pid])
+    .filter(p=>p&&p.terrain==='coast');
+}
+
+// Get naval stats from nation object (stored as mn.naval)
+function getNaval(){
+  return mn.naval||{fleets:0,frigates:0,galleons:0,patrol_boats:0,blockades:[]};
+}
+
+// Naval fleet compositions
+const FLEET_TYPES={
+  patrol_boat: {name:'Patrol Boat',   icon:'🚤', cost:{gold:40,supply:10},  power:1,  upkeep:2,  desc:'Fast, cheap. Good for coastline patrol.'},
+  frigate:     {name:'Frigate',       icon:'⛵', cost:{gold:120,supply:30}, power:4,  upkeep:6,  desc:'Balanced warship. Core of any fleet.'},
+  galleon:     {name:'Galleon',       icon:'🚢', cost:{gold:300,supply:80}, power:10, upkeep:15, desc:'Heavy warship. Dominates open seas.'},
+};
+
+function navalPower(){
+  const n=getNaval();
+  return (n.patrol_boats||0)*1+(n.frigates||0)*4+(n.galleons||0)*10;
+}
+
+function navalUpkeep(){
+  const n=getNaval();
+  return (n.patrol_boats||0)*2+(n.frigates||0)*6+(n.galleons||0)*15;
+}
+
+function renderNavalTab(){
+  const el=document.getElementById('sbNavalContent');
+  if(!el||!mn) return;
+  const n=getNaval();
+  const coasts=getCoastProvs();
+  const power=navalPower();
+  const upkeep=navalUpkeep();
+
+  if(coasts.length===0){
+    el.innerHTML='<div class="naval-panel"><div class="naval-hdr">⚓ NAVAL</div>'
+      +'<div class="naval-body"><div class="naval-no-coast">No coastal provinces.<br>Claim coast terrain to build a navy.</div></div></div>';
+    return;
+  }
+
+  // Stats row
+  const statsRow='<div class="naval-stat-row">'
+    +'<div class="naval-stat"><div class="naval-stat-val">'+coasts.length+'</div><div class="naval-stat-lbl">⚓ PORTS</div></div>'
+    +'<div class="naval-stat"><div class="naval-stat-val">'+power+'</div><div class="naval-stat-lbl">⚔ POWER</div></div>'
+    +'<div class="naval-stat"><div class="naval-stat-val">-'+upkeep+'</div><div class="naval-stat-lbl">💰 UPKEEP</div></div>'
+    +'</div>';
+
+  // Current fleet
+  let fleetHtml='';
+  const fleetDefs=[
+    {key:'patrol_boats',label:'Patrol Boats',  icon:'🚤'},
+    {key:'frigates',    label:'Frigates',       icon:'⛵'},
+    {key:'galleons',    label:'Galleons',       icon:'🚢'},
+  ];
+  fleetDefs.forEach(({key,label,icon})=>{
+    const cnt=n[key]||0;
+    if(cnt>0){
+      fleetHtml+='<div class="naval-fleet-row" style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(90,180,255,.06);">'
+        +'<span style="font-size:14px">'+icon+'</span>'
+        +'<span style="font-size:8px;color:rgba(200,232,255,.6);flex:1">'+label+'</span>'
+        +'<span style="font-size:8.5px;color:#5ab4ff">×'+cnt+'</span>'
+        +'</div>';
+    }
+  });
+  if(!fleetHtml) fleetHtml='<div style="font-size:8px;color:rgba(90,180,255,.3);padding:4px 0">No ships built yet.</div>';
+
+  // Build actions
+  const actGrid='<div class="naval-action-grid">'
+    +Object.entries(FLEET_TYPES).map(([key,ft])=>{
+      const canAfford=(mn.gold||0)>=ft.cost.gold&&(mn.supply||0)>=ft.cost.supply;
+      return '<button class="naval-act-btn" '+(canAfford?'':'style="opacity:.4" ')
+        +'onclick="buildShip(\''+key+'\')" title="'+ft.desc+'">'
+        +'<span>'+ft.icon+'</span>'
+        +'<span style="flex:1">'+ft.name+'<br><span style="font-size:6.5px;color:rgba(90,180,255,.4)">'+ft.cost.gold+'g '+ft.cost.supply+'sup</span></span>'
+        +'</button>';
+    }).join('')
+    +'<button class="naval-act-btn" onclick="toast(\'Blockade — Phase 4\')" style="opacity:.5">'
+    +'<span>🚫</span><span>Blockade<br><span style="font-size:6.5px;color:rgba(90,180,255,.4)">Phase 4</span></span></button>'
+    +'<button class="naval-act-btn" onclick="toast(\'Naval Invasion — Phase 4\')" style="opacity:.5">'
+    +'<span>⚔</span><span>Invade<br><span style="font-size:6.5px;color:rgba(90,180,255,.4)">Phase 4</span></span></button>'
+    +'</div>';
+
+  // Coast list
+  const coastList=coasts.map(p=>'<div style="font-size:8px;color:rgba(90,180,255,.5);padding:2px 0">⚓ '+p.name+'</div>').join('');
+
+  el.innerHTML='<div class="naval-panel">'
+    +'<div class="naval-hdr">⚓ NAVAL COMMAND</div>'
+    +'<div class="naval-body">'
+    +'<div class="naval-coast-badge">'+coasts.length+' COASTAL PORT'+(coasts.length>1?'S':'')+'</div>'
+    +statsRow
+    +'<div style="font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.1em;margin-bottom:3px">FLEET</div>'
+    +fleetHtml
+    +'<div style="font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.1em;margin:6px 0 3px">BUILD SHIPS</div>'
+    +actGrid
+    +'<div style="font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.1em;margin:6px 0 3px">PORTS</div>'
+    +coastList
+    +'</div></div>';
+}
+
+window.buildShip=async function(type){
+  if(!mn) return;
+  const ft=FLEET_TYPES[type];
+  if(!ft){toast('Unknown ship type');return;}
+  if((mn.gold||0)<ft.cost.gold){toast('Not enough Gold (need '+ft.cost.gold+')');return;}
+  if((mn.supply||0)<ft.cost.supply){toast('Not enough Supply (need '+ft.cost.supply+')');return;}
+  if(getCoastProvs().length===0){toast('No coastal ports!');return;}
+
+  const n={...getNaval()};
+  const key=type+'s'; // patrol_boats, frigates, galleons
+  n[key]=(n[key]||0)+1;
+
+  const newGold=Math.round(mn.gold-ft.cost.gold);
+  const newSup=Math.round(mn.supply-ft.cost.supply);
+  const{error}=await sb.from('wc_nations').update({naval:n,gold:newGold,supply:newSup}).eq('id',mn.id);
+  if(error){toast('Error: '+error.message);return;}
+  mn.naval=n; mn.gold=newGold; mn.supply=newSup;
+  nations[mn.id]=mn;
+  updateNatUI();
+  renderNavalTab();
+  toast('⚓ Built: '+ft.name+' (Naval Power: '+navalPower()+')');
+};
 
 // ── GOV MODAL ──────────────────────────────────────────────
 window.openGovModal=function(){

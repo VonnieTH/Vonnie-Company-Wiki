@@ -152,6 +152,28 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 .sb-uncl-yval{font-size:11px;color:#40ff80;}
 .sb-uncl-ylbl{font-size:7px;color:rgba(200,232,255,.25);letter-spacing:.05em;margin-top:1px;}
 .sb-uncl-actions{padding:6px 8px 8px;display:flex;flex-direction:column;gap:3px;}
+/* Unclaimed inline card inside province tab */
+.sb-uncl-inline{margin:6px 8px 8px;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.04);}
+.sb-uncl-inline-hdr{font-size:6.5px;color:rgba(0,212,255,.35);letter-spacing:.18em;padding:3px 8px;background:rgba(0,212,255,.05);border-bottom:1px solid rgba(0,212,255,.1);}
+.sb-uncl-inline-name{font-size:11px;color:#00d4ff;letter-spacing:.04em;padding:6px 8px 2px;}
+.sb-uncl-inline-sub{font-size:7.5px;color:rgba(200,232,255,.35);padding:0 8px 4px;}
+.sb-uncl-inline-yields{display:flex;gap:12px;padding:4px 8px 6px;font-size:8.5px;color:rgba(200,232,255,.55);border-top:1px solid rgba(0,212,255,.08);border-bottom:1px solid rgba(0,212,255,.08);}
+.sb-uncl-inline-btn{font-family:var(--mono);font-size:7.5px;letter-spacing:.08em;padding:5px 8px;border:none;background:rgba(0,212,255,.12);color:#00d4ff;cursor:pointer;width:100%;transition:background .12s;}
+.sb-uncl-inline-btn:hover{background:rgba(0,212,255,.22);}
+.sb-uncl-inline-na{font-size:7.5px;color:rgba(200,232,255,.25);padding:5px 8px;text-align:center;}
+/* ══ NAVAL SYSTEM ══ */
+.naval-panel{border-top:1px solid rgba(90,180,255,.18);margin-top:2px;}
+.naval-hdr{font-size:7px;color:rgba(90,180,255,.4);letter-spacing:.18em;padding:4px 10px 3px;background:rgba(90,180,255,.04);}
+.naval-body{padding:6px 8px 8px;}
+.naval-stat-row{display:flex;gap:5px;margin-bottom:6px;}
+.naval-stat{flex:1;background:rgba(90,180,255,.06);border:1px solid rgba(90,180,255,.15);padding:5px 4px;text-align:center;}
+.naval-stat-val{font-size:12px;color:#5ab4ff;}
+.naval-stat-lbl{font-size:6.5px;color:rgba(90,180,255,.4);letter-spacing:.07em;margin-top:1px;}
+.naval-coast-badge{font-size:7px;color:#5ab4ff;border:1px solid rgba(90,180,255,.3);padding:1px 6px;width:fit-content;margin-bottom:5px;}
+.naval-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px;}
+.naval-act-btn{font-family:var(--mono);font-size:7px;letter-spacing:.05em;padding:5px 5px;border:1px solid rgba(90,180,255,.2);background:transparent;color:rgba(90,180,255,.55);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .12s;}
+.naval-act-btn:hover{background:rgba(90,180,255,.1);border-color:#5ab4ff;color:#5ab4ff;}
+.naval-no-coast{font-size:8px;color:rgba(90,180,255,.25);padding:8px 2px;text-align:center;}
 
 /* Keep legacy classes for compatibility */
 .nname{font-size:11px;color:#f0c040;letter-spacing:.03em;}
