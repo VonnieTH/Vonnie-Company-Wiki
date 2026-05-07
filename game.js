@@ -14,6 +14,19 @@ const LOOKUP    = {"21,6":295,"22,6":295,"23,6":2,"31,6":4,"32,6":4,"33,6":4,"20
 const GOVS      = {"Paperist Democracy":{"color":"#5b8cff","axis":"center","bonus":"+15% Gold, +10% Stability","desc":"Rule by elected representatives through consensus and civic institutions.","support_req":40},"Classical Liberalism":{"color":"#c8e87a","axis":"center-right","bonus":"+20% Gold, +5% Trade","desc":"Individual liberty and free markets. Minimal state, maximum enterprise.","support_req":35},"Reformatorist Left":{"color":"#e87a7a","axis":"center-left","bonus":"+15% Manpower, +10% Stability","desc":"Progressive reform through democratic means. Workers rights and social programs.","support_req":35},"Paperolutionary Left":{"color":"#cc3333","axis":"far-left","bonus":"+25% Manpower, -10% Gold","desc":"Total transformation through revolution. Power to the proletariat!","support_req":50},"Aesthetic Democracy":{"color":"#d4a0e0","axis":"center-left","bonus":"+15% Stability, +10% Culture","desc":"Beauty and democracy intertwined. Governance through artistic vision.","support_req":30},"Traditionalist Right":{"color":"#8c7a44","axis":"right","bonus":"+20% Stability, +10% Manpower","desc":"Preserve the old ways. Heritage, order, and traditional values endure.","support_req":35},"Institutionalism":{"color":"#888888","axis":"center","bonus":"+25% Stability, -5% Income","desc":"Strong institutions, weak rulers. The system governs; individuals serve it.","support_req":30},"Third Positionism":{"color":"#8c4a00","axis":"far-right","bonus":"+20% Army, +10% Manpower, -15% Gold","desc":"Neither left nor right. National solidarity and self-sufficiency.","support_req":45},"Superiority Radicalism":{"color":"#6b3300","axis":"radical","bonus":"+30% Army, -20% Stability","desc":"We are superior. The world shall be remade by force.","support_req":55},"Post-Modernism":{"color":"#40d4cc","axis":"alternative","bonus":"+20% Gold, -10% Manpower","desc":"All structures are fictions. Governance itself is questioned.","support_req":30},"Autocracy":{"color":"#4a4a6a","axis":"authoritarian","bonus":"+10% all resources","desc":"One ruler. One will. The state IS the ruler.","support_req":0},"Neo-Authoritarianism":{"color":"#2a2a4a","axis":"authoritarian","bonus":"+15% Army, +15% Stability","desc":"Modern authoritarianism \u2014 efficient, technological, absolute.","support_req":40},"Anarchism":{"color":"#1a1a1a","axis":"anti-state","bonus":"+20% Supply, no tax, free expansion","desc":"No rulers. No borders. No laws \u2014 only free association.","support_req":60},"Eclecticism":{"color":"#a0a060","axis":"unaligned","bonus":"+5% all stats","desc":"Take the best from every ideology. Built on pragmatism.","support_req":20}};
 const ADJ_GRAPH={"295":[2,301],"2":[3,301,295],"4":[],"301":[2,295,302,304,16],"3":[2,302],"298":[7],"7":[8,298],"8":[299,7],"299":[8,300],"300":[9,299],"10":[190],"302":[3,301,17,305,186],"186":[305,187,302],"5":[307,308,309],"20":[199,309,6,303],"6":[20,303],"303":[6,199,20,310,189],"9":[300],"190":[10],"16":[304,202,301],"305":[198,302,17,186,187,319],"187":[320,305,186],"188":[306],"307":[328,306,308,5],"309":[5,39,199,19,20,308],"189":[310,303],"11":[194,26],"194":[26,11],"304":[16,202,301,318],"17":[305,302,319],"320":[198,337,18,306,187],"306":[320,328,18,307,188],"308":[19,309,307,5],"199":[39,329,303,339,20,309,310],"310":[199,329,303,21,189,191],"191":[21,310],"312":[192,331,23],"323":[193,26,25],"26":[194,323,200,11,25],"313":[27,28,47],"315":[316],"316":[315,324,30],"30":[316],"14":[317,13],"317":[326,196,13,14],"318":[304,202,36],"319":[305,197,198,17],"198":[320,197,336,305,337,319],"311":[321],"192":[312,322,331],"322":[24,193,332,192],"193":[322,323,332,342,25],"27":[313,334,47],"28":[345,204,47,335,313,314],"314":[28,335],"29":[324,205,335],"195":[325,12,13,206,346],"13":[317,195,325,14],"202":[35,36,15,208,304,16,347,318],"18":[320,37,328,337,306],"328":[18,307,19,306,338],"19":[38,39,328,338,308,309],"329":[40,21,310,199],"21":[321,329,340,310,191],"321":[330,21,22,311],"22":[321,330,42,23],"23":[312,42,331,22],"331":[192,312,203,341,23,24],"24":[43,322,331,341],"332":[193,322,43,342],"25":[193,323,200,342,343,26],"200":[25,26,343],"334":[27],"335":[345,314,28,29],"324":[205,49,316,29],"325":[32,195,196,13],"196":[33,325,326,201,317],"326":[201,196,317,327],"327":[201,34,326,15],"15":[202,34,347,327],"36":[35,197,202,209,348,318],"197":[36,198,336,209,319],"337":[320,37,198,336,210,18],"39":[38,199,19,339,309,350],"339":[40,199,351,39],"40":[329,339,340,213,351],"330":[352,321,41,42,340,22],"342":[25,43,332,193],"47":[204,46,313,27,28],"31":[12],"12":[346,195,31],"336":[197,198,337,209,210],"37":[361,337,338,18,349],"338":[37,38,328,19,349],"340":[40,41,330,363,21,213],"42":[352,330,203,22,23],"203":[352,353,42,331,341],"341":[24,331,203],"343":[200,25],"204":[47,48,367,345,28],"345":[204,205,335,48,28],"205":[324,368,49,345,29],"49":[368,324,205],"346":[195,12,206],"206":[32,346,195],"32":[33,356,325,206],"33":[32,196,357,356,201,51],"201":[33,34,196,357,358,326,327],"34":[359,327,201,15,347],"347":[34,202,15,208,207],"35":[36,202,208,53,348],"209":[36,197,336,210,216,348],"38":[39,362,338,19,211,349,350],"41":[352,330,363,364,340,217],"43":[24,332,342],"208":[35,202,347,207],"348":[35,36,209,370,53,216],"210":[360,361,336,337,209],"361":[37,360,210,211,55],"349":[338,211,37,38],"350":[38,39,362,212,351],"351":[40,339,212,373,213,350],"213":[40,363,340,373,374,351],"352":[41,42,203,364,330,60],"353":[203,60],"354":[62,44,45,366],"45":[354,366],"215":[64,46],"46":[377,215,47,367],"367":[65,66,204,46,377],"48":[345,66,204],"368":[49,205],"356":[32,33],"357":[33,358,201,51,52],"358":[201,52,357,359],"359":[34,358],"53":[35,369,370,54,348],"211":[38,361,362,371,349],"363":[41,340,213,374,375,217],"364":[376,217,352,41],"60":[352,353],"214":[218,61,365],"365":[225,44,214,62],"44":[354,365,62],"366":[354,388,45,219,62],"355":[],"51":[33,357],"207":[208,347],"370":[216,348,53],"216":[360,209,370,380,348],"360":[361,210,55,216,223],"362":[38,211,372,212,381,350],"212":[382,362,372,373,350,351],"373":[212,213,374,58,382,351],"217":[384,41,363,364,375,376],"61":[218,386,214],"62":[354,387,388,44,365,366],"377":[64,65,391,46,367],"66":[48,65,392,367],"52":[394,395,357,358],"55":[360,361,399,371,223],"371":[399,211,55,56,381],"372":[362,212,57,381,382],"382":[229,372,212,373,57,58],"374":[363,213,373,375,58,383],"218":[225,386,401,214,61],"219":[390,388,389,366],"64":[390,391,233,215,377],"65":[226,66,391,367,377],"378":[],"369":[53],"54":[380,379,228,53],"380":[216,397,54,223],"223":[360,380,55],"381":[362,75,371,372,56,57],"58":[229,373,374,382,383],"375":[224,384,363,374,217,383],"376":[384,217,59,364],"386":[80,401,218,61],"225":[387,230,365,401,218],"387":[225,388,402,62,63],"388":[387,389,366,219,62,63],"390":[64,389,232,233,219],"50":[221,69],"394":[395,52],"395":[394,52,70],"399":[398,371,403,55,56],"56":[75,371,381,399],"383":[224,229,405,374,375,58],"384":[224,78,407,376,217,59,375],"385":[],"401":[225,386,230,80,218],"389":[388,390,232,219,63],"391":[64,65,233,84,377],"226":[65,392,240,84,85],"392":[393,226,85,66],"393":[392],"69":[50],"221":[50],"379":[54,227,228,222],"57":[229,76,372,381,382],"229":[237,404,405,57,58,382,383],"224":[384,383,405,406,407,375],"59":[384,376,78],"63":[416,387,388,389,232,402,409],"233":[64,417,390,391,232,83,84,410],"84":[233,410,226,391],"396":[72,222,71],"222":[72,379,227,396],"228":[227,73,234,397,54,379,412],"397":[380,234,228],"398":[403,399],"76":[57],"404":[237,229],"405":[224,229,383],"407":[224,384,78,238,406],"78":[384,59,407],"80":[386,421,422,230,79,401,414],"230":[225,231,80,401,402,414],"402":[387,230,231,409,63],"232":[416,417,389,390,233,63],"85":[392,240,226],"70":[411,395],"227":[419,228,72,73,379,222],"403":[75,235,398,399],"75":[56,403,381],"406":[224,77,238,407],"231":[230,81,402,409,415],"409":[416,231,402,63,415],"417":[416,99,232,233,82,83],"410":[233,84,423],"71":[72,411,396,87],"72":[418,227,419,71,396,87,222],"234":[228,74,397,89,412],"237":[404,229],"77":[93,406,238],"238":[77,406,407],"408":[79],"79":[408,80],"414":[96,422,230,80,81],"416":[417,232,415,82,409,63],"240":[226,85],"411":[70,71],"419":[418,227,424,73,72],"73":[419,228,227,424,425,412],"412":[228,425,234,73,89],"413":[74,235],"235":[403,413],"422":[96,421,427,80,414],"81":[231,428,429,414,415],"415":[416,231,429,430,81,82,409],"82":[416,417,98,99,430,415],"83":[99,233,417,423],"423":[410,83],"87":[72,418,245,71],"418":[72,419,424,87],"74":[234,433,89,90,413],"239":[420,244],"421":[80,427,422],"99":[417,98,82,83,439,248],"425":[424,73,431,432,89,412],"89":[425,74,234,432,433,412],"93":[77],"420":[426,244,239],"96":[422,427,428,436,437,414],"428":[96,429,81,437,438],"429":[97,428,430,81,438,415],"430":[97,98,429,82,415],"102":[],"424":[418,419,425,73,88],"433":[74,106,432,434,89,90,444],"90":[433,434,74],"243":[435],"244":[420,426,239,247,251,95],"427":[96,421,422,436,247],"98":[99,430,114,82,439],"245":[440,87,88,441,442],"432":[425,431,433,89,444],"434":[433,90,91,106],"92":[],"435":[243],"426":[420,244,94,95],"247":[427,112,436,244,251,252],"437":[96,428,436,438,252,446],"438":[97,428,429,437,446],"439":[248,98,99,114],"248":[99,439],"440":[245],"88":[424,104,431,245,442,443],"431":[425,105,432,88,443],"91":[434],"246":[],"94":[426,250,445,95],"95":[426,244,250,251,94],"436":[96,427,437,247,252],"97":[429,430,114,438,447],"100":[101],"106":[433,434,444,450],"251":[453,111,112,244,247,95],"252":[455,436,437,247,446],"114":[97,98,439],"101":[100],"441":[448,442,245,103],"442":[448,104,245,88,441],"443":[449,104,105,431,88],"105":[449,450,459,431,443,444],"444":[450,105,106,432,433],"249":[],"445":[94,250,460,110],"250":[460,111,95,445,94,127],"112":[251,453,247],"446":[255,455,113,437,438,252,447],"447":[97,446,113],"104":[448,458,88,442,443],"110":[109,460,445],"111":[128,453,250,251,127],"455":[446,252,454,255],"116":[257,117,133],"119":[],"103":[448,441,463],"448":[258,103,104,458,463,441,442],"449":[105,259,443,459],"450":[105,106,459,444,253],"107":[451],"254":[109],"109":[460,110,254],"453":[112,251,454,111],"454":[453,455],"255":[129,455,113,467,446],"113":[447,446,255],"256":[461],"257":[116,262],"117":[456,116,133,134],"456":[134,117,462],"458":[448,258,104],"459":[449,450,259,105,253],"253":[466,450,459],"451":[107],"108":[452],"452":[108,260],"460":[109,110,250,445,127],"461":[256,131,261],"457":[121,463],"463":[448,457,258,103],"259":[449,459,470],"260":[452],"127":[128,250,460,111],"129":[467,255],"131":[261,266,461,115,468],"115":[468,132,131],"132":[262,267,115,468,469],"262":[257,132,133,469,471],"133":[134,262,116,117,471,472],"134":[133,456,462,117,472,473],"462":[456,134],"258":[448,458,463,470,122],"470":[264,258,259,464],"466":[265,124,125,253],"125":[466,124],"128":[111,142,127],"467":[129,479,255],"261":[266,131,461],"468":[131,132,266,267,115],"469":[480,132,262,267,145,471],"124":[477,265,466,125],"266":[267,131,468,261],"267":[480,132,266,468,469],"472":[481,133,134,146,471,473],"473":[472,134],"120":[474],"121":[457],"122":[258,264,138,475],"464":[123,470],"123":[483,264,139,464,476],"465":[265,476],"265":[465,466,476,124,477],"479":[130,467],"471":[481,133,262,145,469,472],"475":[138,482,122],"264":[483,138,470,122,123],"476":[265,139,140,465,123],"477":[265,124],"143":[130],"130":[479,143],"480":[144,145,267,469],"145":[480,270,144,469,471],"481":[270,146,471,472,156],"135":[485,263],"263":[136,474,485,135],"474":[486,263,136,268,120],"268":[474,482,486,487],"138":[482,483,264,489,269,122,475],"483":[264,138,139,269,123],"478":[142],"142":[128,478],"144":[480,145],"146":[472,481,271],"147":[],"136":[485,486,263,149,474],"486":[487,136,268,149,474],"482":[487,137,138,268,475],"139":[483,490,140,123,476],"140":[153,139,476],"270":[145,156,481],"485":[136,263,149,135],"269":[483,489,490,138,151],"487":[482,486,137,491,268,149,150],"137":[489,482,273,487],"489":[137,138,269,273,151],"490":[139,269,494,151,152],"156":[481,274,270,271],"271":[146,156],"149":[485,486,487,136,150],"153":[152,140,492],"155":[],"491":[163,150,487],"151":[489,490,269,494],"152":[490,492,494,495,153],"141":[],"150":[163,491,149,487],"273":[137,489],"494":[152,490,151],"492":[152,153,495],"274":[156],"158":[272,496,157],"272":[496,276,158],"495":[152,492],"157":[496,158],"496":[272,157,158],"163":[491,150],"276":[272],"159":[497],"148":[493],"493":[148],"275":[],"497":[498,159],"498":[497],"500":[165,166],"166":[500],"165":[500],"160":[168,277,285,502],"277":[160,502],"162":[280,279],"164":[504,508,501],"501":[164,508,181,182],"502":[160,168,169,277,278,286],"278":[502,286,279],"279":[280,162,278,286],"503":[283,507],"504":[515,164,180,507,508],"508":[515,164,501,181,504],"182":[509,292,181,501],"183":[293,284,509],"286":[169,502,278,280,279,510],"280":[162,510,170,279,286,287],"170":[280,511,171,287],"171":[170,511],"172":[288,281,512],"281":[512,282,172],"282":[512,289,173,281],"173":[289,282,174],"283":[291,507,179,503],"507":[291,180,503,504,283],"181":[515,292,501,182,508],"509":[516,293,292,182,183],"285":[168,160],"168":[160,169,285,502],"169":[168,502,286],"288":[172,511],"174":[289,505,173,175],"505":[174],"179":[283,178,291],"180":[515,504,507],"515":[504,180,508,181],"292":[509,516,181,182],"284":[293,294,183],"510":[280,286,287],"287":[280,170,510,511],"511":[288,170,171,287],"512":[281,282,172],"289":[282,173,174],"175":[506,174],"506":[176,175],"176":[506],"290":[],"178":[179],"291":[283,507,179],"516":[509,292,293],"293":[509,284,516,183],"294":[284]};
 const CELL=10, MAP_W=1000, MAP_H=607;
+
+// ── onGC: gov select bonus preview (called on init + gov change) ──
+// IMPORTANT: keep here near constants, not near INIT block
+window.onGC=function(){
+  const el=document.getElementById('sG');
+  const gb=document.getElementById('gB');
+  if(!el||!gb) return;
+  const g=el.value;
+  gb.textContent=(GOVS[g]?.bonus)||'';
+  const col=GOVS[g]?.color||'#888';
+  gb.style.borderColor=col+'44';
+  gb.style.color=col;
+};
 const byId={};
 PROVINCES.forEach(p=>byId[p.id]=p);
 // Owner is determined by is_admin flag in profiles table
@@ -1117,20 +1130,24 @@ window.sbSwitchTab=function(idx){
 
 function refreshSb(){
   if(!mn) return;
-  // Provinces tab
   const el=document.getElementById('sbProvList');
   if(!el) return;
   const mine=Object.entries(ownership).filter(([_,n])=>n===mn.id).map(([pid])=>byId[pid]).filter(Boolean);
   el.innerHTML=mine.map(p=>{
     const act=selProv?.id===p.id?' active':'';
-    return '<div class="sb-pi'+act+'" onclick="selProvById('+p.id+')">'+p.name
-      +'<br><span class="sb-pi-sub">'+p.terrain+' · '+p.gold+'g · '+p.manpower+'mp</span></div>';
+    const coastTag=p.terrain==='coast'?' ⚓':'';
+    return '<div class="sb-pi'+act+'" style="display:flex;align-items:center;justify-content:space-between;padding-right:4px">'
+      +'<div onclick="selProvById('+p.id+')" style="flex:1;cursor:pointer;padding:4px 0 4px 10px">'+p.name+coastTag
+      +'<br><span class="sb-pi-sub">'+p.terrain+' \u00b7 '+p.gold+'g \u00b7 '+p.manpower+'mp</span></div>'
+      +'<button onclick="openProvModal('+p.id+')" style="background:none;border:1px solid rgba(180,160,100,.2);color:rgba(180,160,100,.4);font-size:9px;padding:2px 5px;cursor:pointer;font-family:var(--mono);flex-shrink:0" title="Province Details">\u229e</button>'
+      +'</div>';
   }).join('');
 }
 
 // ── SHOW PANEL — decides which sidebar state to show ─────
 function showPanel(p){
   if(!p) return;
+  _pmodProv=p;
   const oid=ownership[p.id], owner=oid?nations[oid]:null;
   const isOwn=mn&&oid===mn.id;
   const isDiplo=!isOwn&&!!oid&&!!mn;
@@ -1138,35 +1155,36 @@ function showPanel(p){
   const g=id=>document.getElementById(id);
   const noNat=g('noNat'), polPanel=g('sbPolPanel'), diploPanel=g('sbDiploPanel'), unclPanel=g('sbUnclaimedPanel');
 
-  // Always hide all panels first
+  // Hide all panels first
   if(noNat) noNat.style.display='none';
   if(polPanel) polPanel.style.display='none';
   if(diploPanel) diploPanel.style.display='none';
   if(unclPanel) unclPanel.style.display='none';
 
   if(isOwn){
-    // Own province — show political panel
     if(polPanel) polPanel.style.display='';
     updateSbPolPanel();
     sbSwitchTab(1);
     refreshSb();
+    // Open province detail modal
+    openProvModal(p.id);
   } else if(isDiplo && owner){
-    // Foreign province — show diplomacy panel
     if(diploPanel) diploPanel.style.display='';
     showSbDiplo(p, owner, oid);
+    // Open province detail modal for foreign province
+    openProvModal(p.id);
   } else if(mn){
-    // Unclaimed land + has own nation — show own political panel (not diplo)
+    // Unclaimed — show own political, open modal
     if(polPanel) polPanel.style.display='';
     updateSbPolPanel();
-    // Show unclaimed info inside provinces tab
     sbSwitchTab(1);
     refreshSb();
-    // Brief toast about the unclaimed province
     showSbUnclaimedInline(p);
+    openProvModal(p.id);
   } else {
-    // No nation at all — show unclaimed panel
     if(unclPanel) unclPanel.style.display='';
     showSbUnclaimed(p);
+    openProvModal(p.id);
   }
 }
 
@@ -1451,6 +1469,245 @@ window.buildShip=async function(type){
   updateNatUI();
   renderNavalTab();
   toast('⚓ Built: '+ft.name+' (Naval Power: '+navalPower()+')');
+};
+
+// ══ PROVINCE DETAIL MODAL ══════════════════════════════════
+let _pmodProv=null;
+
+window.openProvModal=function(pid){
+  const p=byId[pid]||_pmodProv;
+  if(!p) return;
+  _pmodProv=p;
+  const oid=ownership[p.id], owner=oid?nations[oid]:null;
+  const isOwn=mn&&oid===mn.id;
+  const isDiplo=!isOwn&&!!oid&&!!mn;
+
+  // ── Header ──────────────────────────────────────────────
+  const fw=document.getElementById('pmodFlagWrap');
+  if(fw){
+    if(owner?.flag_url) fw.innerHTML='<img src="'+owner.flag_url+'" alt="">';
+    else fw.innerHTML='<div class="ph">'+(isOwn?'🏛':oid?'🏳':'🗺')+'</div>';
+  }
+  const pname=document.getElementById('pmodProvName');
+  if(pname) pname.textContent=p.name;
+  const nname=document.getElementById('pmodNationName');
+  if(nname){
+    nname.textContent=owner?owner.name:'Unclaimed Territory';
+    nname.style.color=owner?(isOwn?'#dcc87c':'#c8b0ff'):'rgba(200,185,140,.3)';
+  }
+  const tb=document.getElementById('pmodTerrainBadge');
+  if(tb) tb.textContent=p.terrain.toUpperCase()+(p.terrain==='coast'?' ⚓':'');
+  const pw=document.getElementById('pmodPortraitWrap');
+  if(pw){
+    if(owner?.leader_url) pw.innerHTML='<img src="'+owner.leader_url+'" alt="">';
+    else pw.innerHTML='<div class="ph">👤</div>';
+  }
+
+  // Header gradient by relation
+  const hdr=document.getElementById('pmodHeader');
+  if(hdr){
+    if(isOwn) hdr.style.borderBottomColor='rgba(220,200,100,.4)';
+    else if(isDiplo) hdr.style.borderBottomColor='rgba(155,109,255,.35)';
+    else hdr.style.borderBottomColor='rgba(0,212,255,.25)';
+  }
+
+  // ── Stats strip ─────────────────────────────────────────
+  document.getElementById('pmodGold').textContent='+'+p.gold;
+  document.getElementById('pmodMP').textContent='+'+p.manpower;
+  document.getElementById('pmodSup').textContent='+'+p.supply;
+  document.getElementById('pmodPop').textContent='~'+getProvPopEst(p.id)+'k';
+
+  // ── Tab content ─────────────────────────────────────────
+  pmodRenderOverview(p, owner, isOwn, isDiplo, oid);
+  pmodRenderPeople(p, owner);
+  pmodRenderNaval(p, owner, isOwn);
+  pmodRenderActions(p, owner, isOwn, isDiplo, oid);
+
+  // Reset to first tab
+  pmodSwitchTab(0);
+  document.getElementById('provModal').classList.add('open');
+};
+
+window.closeProvModal=function(){
+  document.getElementById('provModal').classList.remove('open');
+};
+
+window.pmodSwitchTab=function(idx){
+  for(let i=0;i<4;i++){
+    const t=document.getElementById('pmodTab'+i);
+    const p=document.getElementById('pmodPanel'+i);
+    if(t) t.classList.toggle('active',i===idx);
+    if(p) p.classList.toggle('active',i===idx);
+  }
+};
+
+function pmodRenderOverview(p, owner, isOwn, isDiplo, oid){
+  const el=document.getElementById('pmodOverviewContent');
+  if(!el) return;
+  const _pp=getProvPeople(p.id);
+  const popEst=getProvPopEst(p.id);
+  const terrainDesc={plains:'Flat, fertile land. Easy to farm and defend.',hills:'Rolling hills. Good for mining and defense.',mountains:'Harsh peaks. Rich in minerals, hard to cross.',forest:'Dense woodland. Rich in timber and game.',coast:'Coastal access. Enables naval trade and fleets.'};
+
+  // Ownership section
+  let html='<div class="pmod-section">'
+    +'<div class="pmod-sec-hdr">TERRITORY</div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">OWNER</span><span class="pmod-row-val '+(isOwn?'gold':oid?'purple':'')+'">'+( owner?owner.name:'Unclaimed')+'</span></div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">STATUS</span><span class="pmod-row-val '+(isOwn?'green':oid?'purple':'')+'">'+( isOwn?'★ YOUR TERRITORY':oid?'Foreign Territory':'Unclaimed Land')+'</span></div>'
+    +(owner?.gov?'<div class="pmod-row"><span class="pmod-row-lbl">GOVERNMENT</span><span class="pmod-row-val" style="color:'+(GOVS[owner.gov]?.color||'#aaa')+'">'+owner.gov+'</span></div>':'')
+    +(owner?.stability!=null?'<div class="pmod-row"><span class="pmod-row-lbl">STABILITY</span><span class="pmod-row-val '+(owner.stability>60?'green':owner.stability>30?'gold':'')+'">'+owner.stability+'%</span></div>'  :'')
+    +'</div>';
+
+  // Geography section
+  html+='<div class="pmod-section">'
+    +'<div class="pmod-sec-hdr">GEOGRAPHY</div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">TERRAIN</span><span class="pmod-row-val">'+(p.terrain[0].toUpperCase()+p.terrain.slice(1))+'</span></div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">POPULATION</span><span class="pmod-row-val blue">~'+popEst+'k</span></div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">PEOPLES</span><span class="pmod-row-val" style="color:'+_pp.color+'">'+_pp.name+'</span></div>'
+    +(p.terrain==='coast'?'<div class="pmod-row"><span class="pmod-row-lbl">PORT</span><span class="pmod-row-val blue">⚓ Coastal Access</span></div>':'')
+    +'<div style="padding:5px 12px 3px;font-size:7.5px;color:rgba(200,185,140,.3)">'+( terrainDesc[p.terrain]||'')+'</div>'
+    +'</div>';
+
+  // Yields section
+  html+='<div class="pmod-section">'
+    +'<div class="pmod-sec-hdr">YIELDS PER TICK</div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">💰 GOLD</span><span class="pmod-row-val gold">+'+p.gold+'</span></div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">⚔ MANPOWER</span><span class="pmod-row-val green">+'+p.manpower+'</span></div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">⚙ SUPPLY</span><span class="pmod-row-val blue">+'+p.supply+'</span></div>'
+    +'</div>';
+
+  el.innerHTML=html;
+}
+
+function pmodRenderPeople(p, owner){
+  const el=document.getElementById('pmodPeopleContent');
+  if(!el) return;
+  const _pp=getProvPeople(p.id);
+  const popEst=getProvPopEst(p.id);
+  const groups=owner?(owner.ethnic_groups||(owner.ethnic_group?[owner.ethnic_group]:[])):[];
+
+  let html='<div class="pmod-people-hero">'
+    +'<div class="pmod-people-color" style="background:'+_pp.color+'"></div>'
+    +'<div><div class="pmod-people-name">'+_pp.name+' Peoples</div>'
+    +'<div class="pmod-people-sub">Est. population: ~'+popEst+'k</div></div>'
+    +'</div>';
+
+  if(groups.length){
+    html+='<div class="pmod-section"><div class="pmod-sec-hdr">ETHNIC GROUPS</div>';
+    groups.forEach(g=>{
+      html+='<div class="pmod-row"><span class="pmod-row-lbl">GROUP</span><span class="pmod-row-val purple">'+g+'</span></div>';
+    });
+    html+='</div>';
+  }
+
+  // Resources of the people
+  html+='<div class="pmod-section"><div class="pmod-sec-hdr">LOCAL RESOURCES</div>'
+    +'<div class="pmod-res-grid">'
+    +(p.terrain==='plains'?'<div class="pmod-res-chip">🌾 Wheat</div><div class="pmod-res-chip">🐄 Livestock</div>':'')
+    +(p.terrain==='forest'?'<div class="pmod-res-chip">🪵 Timber</div><div class="pmod-res-chip">🐺 Game</div>':'')
+    +(p.terrain==='hills'?'<div class="pmod-res-chip">⛏ Iron</div><div class="pmod-res-chip">🪨 Stone</div>':'')
+    +(p.terrain==='mountains'?'<div class="pmod-res-chip">💎 Gems</div><div class="pmod-res-chip">🥇 Gold Ore</div>':'')
+    +(p.terrain==='coast'?'<div class="pmod-res-chip">🐟 Fish</div><div class="pmod-res-chip">🧂 Salt</div>':'')
+    +'</div></div>';
+
+  el.innerHTML=html;
+}
+
+function pmodRenderNaval(p, owner, isOwn){
+  const el=document.getElementById('pmodNavalContent');
+  if(!el) return;
+
+  if(p.terrain!=='coast'){
+    el.innerHTML='<div class="pmod-naval-no-coast">⛰ This province has no coastal access.<br>Only coast terrain provinces can host naval forces.</div>';
+    return;
+  }
+
+  const n=getNaval();
+  const fleetDefs=[
+    {key:'patrol_boats',label:'Patrol Boats',icon:'🚤',power:1},
+    {key:'frigates',label:'Frigates',icon:'⛵',power:4},
+    {key:'galleons',label:'Galleons',icon:'🚢',power:10},
+  ];
+  const totalPower=navalPower();
+  const totalUpkeep=navalUpkeep();
+
+  let html='<div class="pmod-naval-coast">'
+    +'<div class="pmod-naval-coast-icon">⚓</div>'
+    +'<div class="pmod-naval-coast-info">COASTAL PORT<br>'
+    +'<span style="font-size:7.5px;color:rgba(90,180,255,.35)">Naval Power: '+totalPower+' · Upkeep: -'+totalUpkeep+' gold/tick</span></div>'
+    +'</div>';
+
+  // Current fleet
+  html+='<div class="pmod-naval-fleet"><div class="pmod-naval-fleet-hdr">FLEET AT PORT</div>';
+  let hasFleet=false;
+  fleetDefs.forEach(({key,label,icon,power})=>{
+    const cnt=n[key]||0;
+    if(cnt>0){
+      hasFleet=true;
+      html+='<div class="pmod-fleet-row">'
+        +'<div class="pmod-fleet-icon">'+icon+'</div>'
+        +'<div class="pmod-fleet-name">'+label+'</div>'
+        +'<div class="pmod-fleet-cnt">×'+cnt+' (⚔'+( cnt*power)+')</div>'
+        +'</div>';
+    }
+  });
+  if(!hasFleet) html+='<div style="font-size:8px;color:rgba(90,180,255,.25);padding:4px 0">No ships at this port.</div>';
+  html+='</div>';
+
+  // Build ships (own only)
+  if(isOwn){
+    html+='<div class="pmod-naval-build"><div class="pmod-naval-build-hdr">BUILD SHIPS</div>'
+      +'<div class="pmod-build-grid">';
+    Object.entries(FLEET_TYPES).forEach(([key,ft])=>{
+      const canAfford=(mn.gold||0)>=ft.cost.gold&&(mn.supply||0)>=ft.cost.supply;
+      html+='<button class="pmod-build-btn" '+(canAfford?'':'disabled ')
+        +'onclick="buildShip(\''+key+'\');pmodRenderNaval(byId['+p.id+'],null,true);updateNatUI()">'
+        +'<span class="icon">'+ft.icon+'</span>'
+        +ft.name
+        +'<span class="cost">'+ft.cost.gold+'g '+ft.cost.supply+'sup</span>'
+        +'</button>';
+    });
+    html+='</div></div>';
+  } else {
+    html+='<div style="padding:8px 12px;font-size:8px;color:rgba(90,180,255,.25)">Cannot build ships in foreign ports.</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+function pmodRenderActions(p, owner, isOwn, isDiplo, oid){
+  const el=document.getElementById('pmodActionsContent');
+  if(!el) return;
+  const adj=isAdj(p.id);
+  let html='<div class="pmod-action-grid">';
+
+  if(!mn){
+    html+='<button class="pmod-action-btn" style="grid-column:span 2" onclick="openSetup();closeProvModal()">'
+      +'<span class="abtn-icon">⚑</span>Found a Nation Here</button>';
+  } else if(!oid){
+    // Unclaimed
+    html+='<button class="pmod-action-btn" '+(adj?'':'disabled ')+'onclick="claimP('+p.id+');closeProvModal()">'
+      +'<span class="abtn-icon">▶</span>Claim Province<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Cost: 30 Gold'+(adj?'':' · Not adjacent')+'</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">⚒</span>Build Here<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>';
+  } else if(isOwn){
+    // Own territory
+    html+='<button class="pmod-action-btn" onclick="toast(\'Recruit — Phase 4\')" disabled><span class="abtn-icon">⚔</span>Recruit Army<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" onclick="toast(\'Build — Phase 3\')" disabled><span class="abtn-icon">⚒</span>Build<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn" onclick="toast(\'Fortify — Phase 4\')" disabled><span class="abtn-icon">🛡</span>Fortify<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" onclick="toast(\'Trade Route — Phase 3\')" disabled><span class="abtn-icon">🚢</span>Trade Route<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>';
+  } else if(isDiplo){
+    // Foreign territory
+    html+='<button class="pmod-action-btn" onclick="toast(\'Envoy — Phase 3\')" disabled><span class="abtn-icon">💬</span>Send Envoy<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn" onclick="toast(\'Trade — Phase 3\')" disabled><span class="abtn-icon">🤝</span>Propose Trade<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn dng" onclick="toast(\'Declare War — Phase 4\')" disabled><span class="abtn-icon">⚔</span>Declare War<br><span style="font-size:7px;color:rgba(255,107,107,.3)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" onclick="toast(\'Spy — Phase 4\')" disabled><span class="abtn-icon">🕵</span>Send Spy<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>';
+  }
+
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+window.closeProvModal=function(){
+  document.getElementById('provModal').classList.remove('open');
 };
 
 // ── GOV MODAL ──────────────────────────────────────────────

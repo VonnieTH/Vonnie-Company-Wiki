@@ -350,6 +350,50 @@
 <div id="toast"></div>
 <div id="pieTooltip"></div>
 
+<!-- PROVINCE DETAIL MODAL -->
+<div id="provModal">
+  <div class="pmod-box">
+    <!-- Header: flag + province name + owner -->
+    <div class="pmod-header" id="pmodHeader">
+      <div class="pmod-flag-wrap" id="pmodFlagWrap"></div>
+      <div class="pmod-title-block">
+        <div class="pmod-prov-name" id="pmodProvName">—</div>
+        <div class="pmod-nation-name" id="pmodNationName"></div>
+        <div class="pmod-terrain-badge" id="pmodTerrainBadge"></div>
+      </div>
+      <div class="pmod-portrait-wrap" id="pmodPortraitWrap"></div>
+      <button class="pmod-close" onclick="closeProvModal()">✕</button>
+    </div>
+    <!-- Stats strip -->
+    <div class="pmod-stats-strip">
+      <div class="pmod-stat"><div class="pmod-stat-val" id="pmodGold">—</div><div class="pmod-stat-lbl">💰 GOLD</div></div>
+      <div class="pmod-stat"><div class="pmod-stat-val" id="pmodMP">—</div><div class="pmod-stat-lbl">⚔ MANPOWER</div></div>
+      <div class="pmod-stat"><div class="pmod-stat-val" id="pmodSup">—</div><div class="pmod-stat-lbl">⚙ SUPPLY</div></div>
+      <div class="pmod-stat"><div class="pmod-stat-val" id="pmodPop">—</div><div class="pmod-stat-lbl">👥 POP</div></div>
+    </div>
+    <!-- Tab strip -->
+    <div class="pmod-tab-strip">
+      <button class="pmod-tab active" id="pmodTab0" onclick="pmodSwitchTab(0)">OVERVIEW</button>
+      <button class="pmod-tab" id="pmodTab1" onclick="pmodSwitchTab(1)">PEOPLE</button>
+      <button class="pmod-tab" id="pmodTab2" onclick="pmodSwitchTab(2)">NAVAL</button>
+      <button class="pmod-tab" id="pmodTab3" onclick="pmodSwitchTab(3)">ACTIONS</button>
+    </div>
+    <!-- Tab panels -->
+    <div class="pmod-tab-panel active" id="pmodPanel0">
+      <div id="pmodOverviewContent"></div>
+    </div>
+    <div class="pmod-tab-panel" id="pmodPanel1">
+      <div id="pmodPeopleContent"></div>
+    </div>
+    <div class="pmod-tab-panel" id="pmodPanel2">
+      <div id="pmodNavalContent"></div>
+    </div>
+    <div class="pmod-tab-panel" id="pmodPanel3">
+      <div id="pmodActionsContent"></div>
+    </div>
+  </div>
+</div>
+
 <!-- GOV MODAL -->
 <div id="govModal">
   <div class="gmbox">

@@ -288,6 +288,82 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 .sbtn.sec:hover{border-color:#00d4ff;color:#00d4ff;}
 .steplbl{font-size:8px;color:rgba(200,232,255,.3);letter-spacing:.1em;}
 /* GOV MODAL */
+/* ══ PROVINCE DETAIL MODAL ══════════════════════════════ */
+#provModal{position:fixed;inset:0;z-index:8400;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;}
+#provModal.open{display:flex;}
+.pmod-box{width:420px;max-height:88vh;background:#0d0f18;border:1px solid rgba(180,160,100,.3);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.9);font-family:var(--mono);}
+/* Header */
+.pmod-header{display:flex;align-items:stretch;min-height:80px;border-bottom:2px solid rgba(180,160,100,.2);background:linear-gradient(135deg,rgba(25,20,10,.95) 0%,rgba(10,10,18,.95) 100%);position:relative;}
+.pmod-flag-wrap{width:80px;flex-shrink:0;border-right:1px solid rgba(180,160,100,.15);overflow:hidden;background:#09090f;display:flex;align-items:center;justify-content:center;}
+.pmod-flag-wrap img{width:80px;height:100%;object-fit:cover;object-position:center;}
+.pmod-flag-wrap .ph{font-size:28px;color:rgba(180,160,100,.3);}
+.pmod-title-block{flex:1;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px;}
+.pmod-prov-name{font-size:15px;color:#dcc87c;letter-spacing:.04em;line-height:1.2;}
+.pmod-nation-name{font-size:9px;letter-spacing:.06em;margin-top:1px;}
+.pmod-terrain-badge{font-size:7.5px;color:rgba(200,185,140,.35);letter-spacing:.1em;margin-top:4px;border:1px solid rgba(200,185,140,.12);padding:1px 6px;width:fit-content;}
+.pmod-portrait-wrap{width:56px;flex-shrink:0;border-left:1px solid rgba(180,160,100,.1);overflow:hidden;background:#09090f;display:flex;align-items:flex-start;justify-content:center;}
+.pmod-portrait-wrap img{width:56px;height:80px;object-fit:cover;object-position:top;}
+.pmod-portrait-wrap .ph{font-size:24px;color:rgba(180,160,100,.25);margin-top:20px;}
+.pmod-close{position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(200,185,140,.35);font-size:12px;cursor:pointer;font-family:var(--mono);padding:2px 5px;}
+.pmod-close:hover{color:#ff6b6b;}
+/* Stats strip */
+.pmod-stats-strip{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid rgba(180,160,100,.12);flex-shrink:0;}
+.pmod-stat{padding:7px 6px;text-align:center;border-right:1px solid rgba(180,160,100,.07);}
+.pmod-stat:last-child{border-right:none;}
+.pmod-stat-val{font-size:13px;color:#40ff80;}
+.pmod-stat-lbl{font-size:7px;color:rgba(200,185,140,.28);letter-spacing:.07em;margin-top:2px;}
+/* Tab strip */
+.pmod-tab-strip{display:flex;border-bottom:1px solid rgba(180,160,100,.15);flex-shrink:0;background:rgba(0,0,0,.3);}
+.pmod-tab{flex:1;font-family:var(--mono);font-size:7.5px;letter-spacing:.1em;padding:6px 4px;border:none;background:transparent;color:rgba(200,185,140,.3);cursor:pointer;transition:all .12s;border-right:1px solid rgba(180,160,100,.06);}
+.pmod-tab:last-child{border-right:none;}
+.pmod-tab.active{color:#dcc87c;background:rgba(180,160,100,.1);border-bottom:2px solid #dcc87c;}
+.pmod-tab:hover:not(.active){color:rgba(200,185,140,.6);background:rgba(180,160,100,.05);}
+.pmod-tab-panel{display:none;overflow-y:auto;max-height:calc(88vh - 200px);}
+.pmod-tab-panel.active{display:block;}
+/* Overview tab */
+.pmod-section{border-bottom:1px solid rgba(180,160,100,.07);}
+.pmod-sec-hdr{font-size:7px;color:rgba(200,185,140,.3);letter-spacing:.18em;padding:4px 12px;background:rgba(180,160,100,.04);border-left:2px solid rgba(180,160,100,.2);}
+.pmod-row{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-bottom:.5px solid rgba(180,160,100,.05);font-size:8.5px;}
+.pmod-row-lbl{color:rgba(200,185,140,.4);letter-spacing:.05em;}
+.pmod-row-val{color:#c8e8ff;}
+.pmod-row-val.gold{color:#f0c040;}.pmod-row-val.green{color:#40ff80;}.pmod-row-val.blue{color:#5ab4ff;}.pmod-row-val.purple{color:#b080ff;}
+.pmod-unrest-bar{height:4px;background:rgba(255,255,255,.06);margin:0 12px 8px;border-radius:2px;overflow:hidden;}
+.pmod-unrest-fill{height:100%;border-radius:2px;background:#ff6b6b;transition:width .4s ease;}
+/* People tab */
+.pmod-people-hero{display:flex;align-items:center;gap:10px;padding:12px;}
+.pmod-people-color{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.pmod-people-name{font-size:11px;color:#c8e8ff;letter-spacing:.04em;}
+.pmod-people-sub{font-size:8px;color:rgba(200,232,255,.35);margin-top:2px;}
+.pmod-res-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:8px 12px;}
+.pmod-res-chip{background:rgba(240,192,64,.07);border:1px solid rgba(240,192,64,.2);color:#f0c040;font-size:8px;padding:4px 8px;display:flex;align-items:center;gap:5px;}
+/* Naval tab */
+.pmod-naval-coast{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(90,180,255,.1);}
+.pmod-naval-coast-icon{font-size:22px;}
+.pmod-naval-coast-info{flex:1;font-size:8.5px;color:rgba(90,180,255,.6);}
+.pmod-naval-no-coast{padding:20px;text-align:center;font-size:8.5px;color:rgba(200,185,140,.25);line-height:2;}
+.pmod-naval-fleet{padding:8px 12px;}
+.pmod-naval-fleet-hdr{font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.15em;margin-bottom:6px;}
+.pmod-fleet-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:.5px solid rgba(90,180,255,.06);}
+.pmod-fleet-icon{font-size:16px;width:22px;text-align:center;}
+.pmod-fleet-name{font-size:8.5px;color:rgba(200,232,255,.55);flex:1;}
+.pmod-fleet-cnt{font-size:9px;color:#5ab4ff;}
+.pmod-naval-build{padding:8px 12px;}
+.pmod-naval-build-hdr{font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.15em;margin-bottom:5px;}
+.pmod-build-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;}
+.pmod-build-btn{font-family:var(--mono);font-size:7px;padding:6px 4px;border:1px solid rgba(90,180,255,.2);background:transparent;color:rgba(90,180,255,.55);cursor:pointer;text-align:center;transition:all .12s;}
+.pmod-build-btn:hover:not(:disabled){background:rgba(90,180,255,.1);border-color:#5ab4ff;color:#5ab4ff;}
+.pmod-build-btn:disabled{opacity:.3;cursor:not-allowed;}
+.pmod-build-btn .icon{font-size:14px;display:block;margin-bottom:2px;}
+.pmod-build-btn .cost{font-size:6.5px;color:rgba(90,180,255,.35);margin-top:2px;}
+/* Actions tab */
+.pmod-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 12px;}
+.pmod-action-btn{font-family:var(--mono);font-size:8px;letter-spacing:.05em;padding:8px 8px;border:1px solid rgba(180,160,100,.2);background:transparent;color:rgba(200,185,140,.5);cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all .12s;}
+.pmod-action-btn:hover:not(:disabled){background:rgba(180,160,100,.1);border-color:#dcc87c;color:#dcc87c;}
+.pmod-action-btn:disabled{opacity:.3;cursor:not-allowed;}
+.pmod-action-btn.dng{border-color:rgba(255,107,107,.2);color:rgba(255,107,107,.4);}
+.pmod-action-btn.dng:hover:not(:disabled){background:rgba(255,107,107,.08);border-color:#ff6b6b;color:#ff6b6b;}
+.pmod-action-btn .abtn-icon{font-size:14px;}
+
 #govModal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;overflow-y:auto;}
 #govModal.open{display:flex;}
 .gmbox{width:440px;max-width:95vw;background:#0d0d1a;border:1px solid rgba(240,192,64,.4);max-height:88vh;display:flex;flex-direction:column;}
