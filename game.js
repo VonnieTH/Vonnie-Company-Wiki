@@ -1471,59 +1471,64 @@ window.buildShip=async function(type){
   toast('⚓ Built: '+ft.name+' (Naval Power: '+navalPower()+')');
 };
 
-// ══ PROVINCE DETAIL MODAL ══════════════════════════════════
+// ══ PROVINCE DETAIL MODAL — bottom-left card ═══════════════
 let _pmodProv=null;
 
+const TERRAIN_ICON={plains:'🌾',hills:'⛰',mountains:'🏔',forest:'🌲',coast:'⚓',sea:'🌊'};
+const TERRAIN_COLOR={plains:'rgba(180,160,100,.35)',hills:'rgba(150,130,80,.35)',mountains:'rgba(120,110,90,.35)',forest:'rgba(60,140,80,.35)',coast:'rgba(90,180,255,.35)',sea:'rgba(40,140,220,.35)'};
+const TERRAIN_DESC={plains:'Fertile flatland. Ideal for farming and settlement.',hills:'Rolling terrain. Good for mining and fortification.',mountains:'Harsh peaks. Rich minerals, difficult to traverse.',forest:'Dense woodland. Rich in timber and wildlife.',coast:'Coastal access. Enables naval trade and fleet building.',sea:'Open waters. Navigable by naval vessels.'};
+
 window.openProvModal=function(pid){
-  const p=byId[pid]||_pmodProv;
+  const p=byId[pid];
   if(!p) return;
   _pmodProv=p;
+
   const oid=ownership[p.id], owner=oid?nations[oid]:null;
   const isOwn=mn&&oid===mn.id;
   const isDiplo=!isOwn&&!!oid&&!!mn;
+  const isSea=p.terrain==='sea';
 
-  // ── Header ──────────────────────────────────────────────
-  const fw=document.getElementById('pmodFlagWrap');
-  if(fw){
-    if(owner?.flag_url) fw.innerHTML='<img src="'+owner.flag_url+'" alt="">';
-    else fw.innerHTML='<div class="ph">'+(isOwn?'🏛':oid?'🏳':'🗺')+'</div>';
-  }
-  const pname=document.getElementById('pmodProvName');
-  if(pname) pname.textContent=p.name;
+  // ── Title bar ───────────────────────────────────────────
+  const terrainIcon=TERRAIN_ICON[p.terrain]||'🗺';
+  const terrainCol=TERRAIN_COLOR[p.terrain]||'rgba(180,160,100,.3)';
+  document.getElementById('pmodTerrainIcon').textContent=terrainIcon;
+  document.getElementById('pmodProvName').textContent=p.name;
+
   const nname=document.getElementById('pmodNationName');
   if(nname){
-    nname.textContent=owner?owner.name:'Unclaimed Territory';
-    nname.style.color=owner?(isOwn?'#dcc87c':'#c8b0ff'):'rgba(200,185,140,.3)';
+    if(isSea){nname.textContent='Sea Province';nname.style.color='rgba(90,180,255,.5)';}
+    else if(owner){nname.textContent=owner.name;nname.style.color=isOwn?'#dcc87c':isDiplo?'#c8b0ff':'rgba(200,185,140,.4)';}
+    else{nname.textContent='Unclaimed Territory';nname.style.color='rgba(200,185,140,.3)';}
   }
-  const tb=document.getElementById('pmodTerrainBadge');
-  if(tb) tb.textContent=p.terrain.toUpperCase()+(p.terrain==='coast'?' ⚓':'');
-  const pw=document.getElementById('pmodPortraitWrap');
-  if(pw){
-    if(owner?.leader_url) pw.innerHTML='<img src="'+owner.leader_url+'" alt="">';
-    else pw.innerHTML='<div class="ph">👤</div>';
+  const popBadge=document.getElementById('pmodPopBadge');
+  if(popBadge){
+    if(isSea) popBadge.textContent='NAVIGABLE';
+    else popBadge.textContent='~'+getProvPopEst(p.id)+'k pop';
   }
 
-  // Header gradient by relation
-  const hdr=document.getElementById('pmodHeader');
-  if(hdr){
-    if(isOwn) hdr.style.borderBottomColor='rgba(220,200,100,.4)';
-    else if(isDiplo) hdr.style.borderBottomColor='rgba(155,109,255,.35)';
-    else hdr.style.borderBottomColor='rgba(0,212,255,.25)';
-  }
+  // Titlebar accent color
+  const tb=document.querySelector('.pmod-titlebar');
+  if(tb) tb.style.background='linear-gradient(90deg,'+terrainCol+' 0%,rgba(10,10,18,.95) 100%)';
 
   // ── Stats strip ─────────────────────────────────────────
-  document.getElementById('pmodGold').textContent='+'+p.gold;
-  document.getElementById('pmodMP').textContent='+'+p.manpower;
-  document.getElementById('pmodSup').textContent='+'+p.supply;
-  document.getElementById('pmodPop').textContent='~'+getProvPopEst(p.id)+'k';
+  if(isSea){
+    document.getElementById('pmodGold').textContent='+'+p.gold;
+    document.getElementById('pmodMP').textContent='—';
+    document.getElementById('pmodSup').textContent='+'+p.supply;
+    document.getElementById('pmodPop').textContent='—';
+  } else {
+    document.getElementById('pmodGold').textContent='+'+p.gold;
+    document.getElementById('pmodMP').textContent='+'+p.manpower;
+    document.getElementById('pmodSup').textContent='+'+p.supply;
+    document.getElementById('pmodPop').textContent='~'+getProvPopEst(p.id)+'k';
+  }
 
   // ── Tab content ─────────────────────────────────────────
-  pmodRenderOverview(p, owner, isOwn, isDiplo, oid);
-  pmodRenderPeople(p, owner);
-  pmodRenderNaval(p, owner, isOwn);
-  pmodRenderActions(p, owner, isOwn, isDiplo, oid);
+  pmodRenderOverview(p,owner,isOwn,isDiplo,oid);
+  pmodRenderPeople(p,owner,isSea);
+  pmodRenderNaval(p,owner,isOwn,isSea);
+  pmodRenderActions(p,owner,isOwn,isDiplo,oid,isSea);
 
-  // Reset to first tab
   pmodSwitchTab(0);
   document.getElementById('provModal').classList.add('open');
 };
@@ -1541,174 +1546,161 @@ window.pmodSwitchTab=function(idx){
   }
 };
 
-function pmodRenderOverview(p, owner, isOwn, isDiplo, oid){
+function pmodRenderOverview(p,owner,isOwn,isDiplo,oid){
   const el=document.getElementById('pmodOverviewContent');
   if(!el) return;
-  const _pp=getProvPeople(p.id);
-  const popEst=getProvPopEst(p.id);
-  const terrainDesc={plains:'Flat, fertile land. Easy to farm and defend.',hills:'Rolling hills. Good for mining and defense.',mountains:'Harsh peaks. Rich in minerals, hard to cross.',forest:'Dense woodland. Rich in timber and game.',coast:'Coastal access. Enables naval trade and fleets.'};
+  const isSea=p.terrain==='sea';
 
-  // Ownership section
-  let html='<div class="pmod-section">'
-    +'<div class="pmod-sec-hdr">TERRITORY</div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">OWNER</span><span class="pmod-row-val '+(isOwn?'gold':oid?'purple':'')+'">'+( owner?owner.name:'Unclaimed')+'</span></div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">STATUS</span><span class="pmod-row-val '+(isOwn?'green':oid?'purple':'')+'">'+( isOwn?'★ YOUR TERRITORY':oid?'Foreign Territory':'Unclaimed Land')+'</span></div>'
-    +(owner?.gov?'<div class="pmod-row"><span class="pmod-row-lbl">GOVERNMENT</span><span class="pmod-row-val" style="color:'+(GOVS[owner.gov]?.color||'#aaa')+'">'+owner.gov+'</span></div>':'')
-    +(owner?.stability!=null?'<div class="pmod-row"><span class="pmod-row-lbl">STABILITY</span><span class="pmod-row-val '+(owner.stability>60?'green':owner.stability>30?'gold':'')+'">'+owner.stability+'%</span></div>'  :'')
-    +'</div>';
+  // Ownership
+  let html='<div class="pmod-section"><div class="pmod-sec-hdr">TERRITORY</div>';
+  if(isSea){
+    html+='<div class="pmod-row"><span class="pmod-row-lbl">TYPE</span><span class="pmod-row-val blue">Sea Province</span></div>';
+    const navPow=navalPower();
+    html+='<div class="pmod-row"><span class="pmod-row-lbl">YOUR NAVAL POWER</span><span class="pmod-row-val blue">'+(mn?navPow:'—')+'</span></div>';
+  } else {
+    html+='<div class="pmod-row"><span class="pmod-row-lbl">OWNER</span><span class="pmod-row-val '+(isOwn?'gold':oid?'purple':'')+'">'+( owner?owner.name:'Unclaimed')+'</span></div>';
+    html+='<div class="pmod-row"><span class="pmod-row-lbl">STATUS</span><span class="pmod-row-val '+(isOwn?'green':oid?'purple':'')+'">'+( isOwn?'★ YOUR TERRITORY':oid?'Foreign Territory':'Unclaimed Land')+'</span></div>';
+    if(owner?.gov) html+='<div class="pmod-row"><span class="pmod-row-lbl">GOVERNMENT</span><span class="pmod-row-val" style="color:'+( GOVS[owner.gov]?.color||'#aaa')+'">'+owner.gov+'</span></div>';
+    if(owner?.stability!=null) html+='<div class="pmod-row"><span class="pmod-row-lbl">STABILITY</span><span class="pmod-row-val '+(owner.stability>60?'green':owner.stability>30?'gold':'')+'">'+owner.stability+'%</span></div>';
+  }
+  html+='</div>';
 
-  // Geography section
-  html+='<div class="pmod-section">'
-    +'<div class="pmod-sec-hdr">GEOGRAPHY</div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">TERRAIN</span><span class="pmod-row-val">'+(p.terrain[0].toUpperCase()+p.terrain.slice(1))+'</span></div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">POPULATION</span><span class="pmod-row-val blue">~'+popEst+'k</span></div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">PEOPLES</span><span class="pmod-row-val" style="color:'+_pp.color+'">'+_pp.name+'</span></div>'
-    +(p.terrain==='coast'?'<div class="pmod-row"><span class="pmod-row-lbl">PORT</span><span class="pmod-row-val blue">⚓ Coastal Access</span></div>':'')
-    +'<div style="padding:5px 12px 3px;font-size:7.5px;color:rgba(200,185,140,.3)">'+( terrainDesc[p.terrain]||'')+'</div>'
-    +'</div>';
+  // Geography
+  html+='<div class="pmod-section"><div class="pmod-sec-hdr">GEOGRAPHY</div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">TERRAIN</span><span class="pmod-row-val">'+(p.terrain[0].toUpperCase()+p.terrain.slice(1))+'</span></div>';
+  if(!isSea){
+    const _pp=getProvPeople(p.id);
+    html+='<div class="pmod-row"><span class="pmod-row-lbl">PEOPLES</span><span class="pmod-row-val" style="color:'+_pp.color+'">'+_pp.name+'</span></div>';
+  }
+  html+='<div style="padding:4px 10px 6px;font-size:7.5px;color:rgba(200,185,140,.3)">'+( TERRAIN_DESC[p.terrain]||'')+'</div>';
+  html+='</div>';
 
-  // Yields section
-  html+='<div class="pmod-section">'
-    +'<div class="pmod-sec-hdr">YIELDS PER TICK</div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">💰 GOLD</span><span class="pmod-row-val gold">+'+p.gold+'</span></div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">⚔ MANPOWER</span><span class="pmod-row-val green">+'+p.manpower+'</span></div>'
-    +'<div class="pmod-row"><span class="pmod-row-lbl">⚙ SUPPLY</span><span class="pmod-row-val blue">+'+p.supply+'</span></div>'
-    +'</div>';
+  // Yields
+  html+='<div class="pmod-section"><div class="pmod-sec-hdr">YIELDS PER TICK</div>'
+    +'<div class="pmod-row"><span class="pmod-row-lbl">💰 GOLD</span><span class="pmod-row-val gold">+'+p.gold+'</span></div>';
+  if(!isSea) html+='<div class="pmod-row"><span class="pmod-row-lbl">⚔ MANPOWER</span><span class="pmod-row-val green">+'+p.manpower+'</span></div>';
+  html+='<div class="pmod-row"><span class="pmod-row-lbl">⚙ SUPPLY</span><span class="pmod-row-val blue">+'+p.supply+'</span></div>';
+  html+='</div>';
 
   el.innerHTML=html;
 }
 
-function pmodRenderPeople(p, owner){
+function pmodRenderPeople(p,owner,isSea){
   const el=document.getElementById('pmodPeopleContent');
   if(!el) return;
+  if(isSea){
+    const navPow=navalPower();
+    const n=getNaval();
+    let html='<div class="pmod-sea-banner"><div class="pmod-sea-icon">🌊</div><div class="pmod-sea-name">'+p.name+'</div><div class="pmod-sea-sub">Open sea — navigable by naval fleets</div></div>';
+    html+='<div class="pmod-section"><div class="pmod-sec-hdr">SEA CONDITIONS</div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">NAVIGATION</span><span class="pmod-row-val blue">Open Waters</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">TRADE WIND</span><span class="pmod-row-val green">Favorable</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">HAZARD</span><span class="pmod-row-val gold">Moderate</span></div>'
+      +'</div>';
+    html+='<div class="pmod-section"><div class="pmod-sec-hdr">YOUR NAVAL PRESENCE</div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">NAVAL POWER</span><span class="pmod-row-val blue">'+(mn?navPow:'—')+'</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">PATROL BOATS</span><span class="pmod-row-val">'+( n.patrol_boats||0)+'</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">FRIGATES</span><span class="pmod-row-val">'+( n.frigates||0)+'</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">GALLEONS</span><span class="pmod-row-val">'+( n.galleons||0)+'</span></div>'
+      +'</div>';
+    el.innerHTML=html;
+    return;
+  }
   const _pp=getProvPeople(p.id);
   const popEst=getProvPopEst(p.id);
   const groups=owner?(owner.ethnic_groups||(owner.ethnic_group?[owner.ethnic_group]:[])):[];
-
-  let html='<div class="pmod-people-hero">'
-    +'<div class="pmod-people-color" style="background:'+_pp.color+'"></div>'
-    +'<div><div class="pmod-people-name">'+_pp.name+' Peoples</div>'
-    +'<div class="pmod-people-sub">Est. population: ~'+popEst+'k</div></div>'
-    +'</div>';
-
+  let html='<div class="pmod-people-hero"><div class="pmod-people-color" style="background:'+_pp.color+'"></div><div><div class="pmod-people-name">'+_pp.name+' Peoples</div><div class="pmod-people-sub">Est. ~'+popEst+'k population</div></div></div>';
   if(groups.length){
     html+='<div class="pmod-section"><div class="pmod-sec-hdr">ETHNIC GROUPS</div>';
-    groups.forEach(g=>{
-      html+='<div class="pmod-row"><span class="pmod-row-lbl">GROUP</span><span class="pmod-row-val purple">'+g+'</span></div>';
-    });
+    groups.forEach(g=>{html+='<div class="pmod-row"><span class="pmod-row-lbl">GROUP</span><span class="pmod-row-val purple">'+g+'</span></div>';});
     html+='</div>';
   }
-
-  // Resources of the people
-  html+='<div class="pmod-section"><div class="pmod-sec-hdr">LOCAL RESOURCES</div>'
-    +'<div class="pmod-res-grid">'
-    +(p.terrain==='plains'?'<div class="pmod-res-chip">🌾 Wheat</div><div class="pmod-res-chip">🐄 Livestock</div>':'')
-    +(p.terrain==='forest'?'<div class="pmod-res-chip">🪵 Timber</div><div class="pmod-res-chip">🐺 Game</div>':'')
-    +(p.terrain==='hills'?'<div class="pmod-res-chip">⛏ Iron</div><div class="pmod-res-chip">🪨 Stone</div>':'')
-    +(p.terrain==='mountains'?'<div class="pmod-res-chip">💎 Gems</div><div class="pmod-res-chip">🥇 Gold Ore</div>':'')
-    +(p.terrain==='coast'?'<div class="pmod-res-chip">🐟 Fish</div><div class="pmod-res-chip">🧂 Salt</div>':'')
-    +'</div></div>';
-
+  const resMap={plains:['🌾 Wheat','🐄 Livestock'],hills:['⛏ Iron','🪨 Stone'],mountains:['💎 Gems','🥇 Gold Ore'],forest:['🪵 Timber','🐺 Game'],coast:['🐟 Fish','🧂 Salt']};
+  const res=resMap[p.terrain]||[];
+  if(res.length) html+='<div class="pmod-section"><div class="pmod-sec-hdr">LOCAL RESOURCES</div><div class="pmod-res-grid">'+res.map(r=>'<div class="pmod-res-chip">'+r+'</div>').join('')+'</div></div>';
   el.innerHTML=html;
 }
 
-function pmodRenderNaval(p, owner, isOwn){
+function pmodRenderNaval(p,owner,isOwn,isSea){
   const el=document.getElementById('pmodNavalContent');
   if(!el) return;
+  const n=getNaval();
+  const fleetDefs=[{key:'patrol_boats',label:'Patrol Boats',icon:'🚤',power:1},{key:'frigates',label:'Frigates',icon:'⛵',power:4},{key:'galleons',label:'Galleons',icon:'🚢',power:10}];
 
-  if(p.terrain!=='coast'){
-    el.innerHTML='<div class="pmod-naval-no-coast">⛰ This province has no coastal access.<br>Only coast terrain provinces can host naval forces.</div>';
+  if(isSea){
+    // Sea province: show naval strategic info
+    const navPow=navalPower();
+    const upkeep=navalUpkeep();
+    let html='<div class="pmod-section"><div class="pmod-sec-hdr">SEA CONTROL</div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">YOUR NAVAL POWER</span><span class="pmod-row-val blue">'+(mn?navPow:'—')+'</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">FLEET UPKEEP</span><span class="pmod-row-val gold">'+(mn?'-'+upkeep+'/tick':'—')+'</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">TRADE ROUTE</span><span class="pmod-row-val">Phase 3</span></div>'
+      +'<div class="pmod-row"><span class="pmod-row-lbl">BLOCKADE</span><span class="pmod-row-val">Phase 4</span></div>'
+      +'</div>';
+    html+='<div class="pmod-section"><div class="pmod-sec-hdr">FLEET COMPOSITION</div>';
+    let hasFleet=false;
+    fleetDefs.forEach(({key,label,icon,power})=>{const cnt=n[key]||0;if(cnt>0){hasFleet=true;html+='<div class="pmod-fleet-row"><div class="pmod-fleet-icon">'+icon+'</div><div class="pmod-fleet-name">'+label+'</div><div class="pmod-fleet-cnt">×'+cnt+' (⚔'+cnt*power+')</div></div>';}});
+    if(!hasFleet) html+='<div style="padding:6px 10px;font-size:8px;color:rgba(90,180,255,.25)">No ships built. Claim a coast province to build.</div>';
+    html+='</div>';
+    el.innerHTML=html;
     return;
   }
 
-  const n=getNaval();
-  const fleetDefs=[
-    {key:'patrol_boats',label:'Patrol Boats',icon:'🚤',power:1},
-    {key:'frigates',label:'Frigates',icon:'⛵',power:4},
-    {key:'galleons',label:'Galleons',icon:'🚢',power:10},
-  ];
-  const totalPower=navalPower();
-  const totalUpkeep=navalUpkeep();
-
-  let html='<div class="pmod-naval-coast">'
-    +'<div class="pmod-naval-coast-icon">⚓</div>'
-    +'<div class="pmod-naval-coast-info">COASTAL PORT<br>'
-    +'<span style="font-size:7.5px;color:rgba(90,180,255,.35)">Naval Power: '+totalPower+' · Upkeep: -'+totalUpkeep+' gold/tick</span></div>'
-    +'</div>';
-
-  // Current fleet
-  html+='<div class="pmod-naval-fleet"><div class="pmod-naval-fleet-hdr">FLEET AT PORT</div>';
-  let hasFleet=false;
-  fleetDefs.forEach(({key,label,icon,power})=>{
-    const cnt=n[key]||0;
-    if(cnt>0){
-      hasFleet=true;
-      html+='<div class="pmod-fleet-row">'
-        +'<div class="pmod-fleet-icon">'+icon+'</div>'
-        +'<div class="pmod-fleet-name">'+label+'</div>'
-        +'<div class="pmod-fleet-cnt">×'+cnt+' (⚔'+( cnt*power)+')</div>'
-        +'</div>';
-    }
-  });
-  if(!hasFleet) html+='<div style="font-size:8px;color:rgba(90,180,255,.25);padding:4px 0">No ships at this port.</div>';
-  html+='</div>';
-
-  // Build ships (own only)
-  if(isOwn){
-    html+='<div class="pmod-naval-build"><div class="pmod-naval-build-hdr">BUILD SHIPS</div>'
-      +'<div class="pmod-build-grid">';
-    Object.entries(FLEET_TYPES).forEach(([key,ft])=>{
-      const canAfford=(mn.gold||0)>=ft.cost.gold&&(mn.supply||0)>=ft.cost.supply;
-      html+='<button class="pmod-build-btn" '+(canAfford?'':'disabled ')
-        +'onclick="buildShip(\''+key+'\');pmodRenderNaval(byId['+p.id+'],null,true);updateNatUI()">'
-        +'<span class="icon">'+ft.icon+'</span>'
-        +ft.name
-        +'<span class="cost">'+ft.cost.gold+'g '+ft.cost.supply+'sup</span>'
-        +'</button>';
-    });
-    html+='</div></div>';
-  } else {
-    html+='<div style="padding:8px 12px;font-size:8px;color:rgba(90,180,255,.25)">Cannot build ships in foreign ports.</div>';
+  if(p.terrain!=='coast'){
+    el.innerHTML='<div class="pmod-naval-no-coast">⛰ No coastal access.<br>Only coast terrain provinces<br>can host naval forces.</div>';
+    return;
   }
 
+  // Coast province
+  const totalPow=navalPower(), totalUp=navalUpkeep();
+  let html='<div class="pmod-naval-coast-hdr"><span style="font-size:16px">⚓</span><div><div class="pmod-naval-coast-lbl">COASTAL PORT</div><div class="pmod-naval-coast-sub">Power: '+totalPow+' · Upkeep: -'+totalUp+'/tick</div></div></div>';
+  let hasFleet=false;
+  fleetDefs.forEach(({key,label,icon,power})=>{const cnt=n[key]||0;if(cnt>0){hasFleet=true;html+='<div class="pmod-fleet-row"><div class="pmod-fleet-icon">'+icon+'</div><div class="pmod-fleet-name">'+label+'</div><div class="pmod-fleet-cnt">×'+cnt+'</div></div>';}});
+  if(!hasFleet) html+='<div style="padding:5px 10px;font-size:8px;color:rgba(90,180,255,.25)">No ships built yet.</div>';
+
+  if(isOwn){
+    html+='<div class="pmod-naval-build-hdr">BUILD SHIPS</div><div class="pmod-build-grid">';
+    Object.entries(FLEET_TYPES).forEach(([key,ft])=>{
+      const can=(mn.gold||0)>=ft.cost.gold&&(mn.supply||0)>=ft.cost.supply;
+      html+='<button class="pmod-build-btn" '+(can?'':'disabled ')+'onclick="buildShip(\''+key+'\');openProvModal('+p.id+')">'
+        +'<span class="icon">'+ft.icon+'</span>'+ft.name+'<span class="cost">'+ft.cost.gold+'g '+ft.cost.supply+'sup</span></button>';
+    });
+    html+='</div>';
+  }
   el.innerHTML=html;
 }
 
-function pmodRenderActions(p, owner, isOwn, isDiplo, oid){
+function pmodRenderActions(p,owner,isOwn,isDiplo,oid,isSea){
   const el=document.getElementById('pmodActionsContent');
   if(!el) return;
   const adj=isAdj(p.id);
   let html='<div class="pmod-action-grid">';
 
-  if(!mn){
-    html+='<button class="pmod-action-btn" style="grid-column:span 2" onclick="openSetup();closeProvModal()">'
-      +'<span class="abtn-icon">⚑</span>Found a Nation Here</button>';
+  if(isSea){
+    html+='<button class="pmod-action-btn" disabled><span class="abtn-icon">🚢</span>Naval Patrol<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🚫</span>Blockade<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🤝</span>Sea Trade<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">⚔</span>Naval Battle<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>';
+  } else if(!mn){
+    html+='<button class="pmod-action-btn" style="grid-column:span 2" onclick="openSetup();closeProvModal()"><span class="abtn-icon">⚑</span>Found Nation Here</button>';
   } else if(!oid){
-    // Unclaimed
-    html+='<button class="pmod-action-btn" '+(adj?'':'disabled ')+'onclick="claimP('+p.id+');closeProvModal()">'
-      +'<span class="abtn-icon">▶</span>Claim Province<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Cost: 30 Gold'+(adj?'':' · Not adjacent')+'</span></button>'
-      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">⚒</span>Build Here<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>';
+    html+='<button class="pmod-action-btn" '+(adj?'':'disabled ')+'onclick="claimP('+p.id+');closeProvModal()"><span class="abtn-icon">▶</span>Claim Province<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">30 Gold'+(adj?'':' · Not adjacent')+'</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">⚒</span>Build<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>';
   } else if(isOwn){
-    // Own territory
-    html+='<button class="pmod-action-btn" onclick="toast(\'Recruit — Phase 4\')" disabled><span class="abtn-icon">⚔</span>Recruit Army<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>'
-      +'<button class="pmod-action-btn" onclick="toast(\'Build — Phase 3\')" disabled><span class="abtn-icon">⚒</span>Build<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
-      +'<button class="pmod-action-btn" onclick="toast(\'Fortify — Phase 4\')" disabled><span class="abtn-icon">🛡</span>Fortify<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>'
-      +'<button class="pmod-action-btn" onclick="toast(\'Trade Route — Phase 3\')" disabled><span class="abtn-icon">🚢</span>Trade Route<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>';
-  } else if(isDiplo){
-    // Foreign territory
-    html+='<button class="pmod-action-btn" onclick="toast(\'Envoy — Phase 3\')" disabled><span class="abtn-icon">💬</span>Send Envoy<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
-      +'<button class="pmod-action-btn" onclick="toast(\'Trade — Phase 3\')" disabled><span class="abtn-icon">🤝</span>Propose Trade<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 3</span></button>'
-      +'<button class="pmod-action-btn dng" onclick="toast(\'Declare War — Phase 4\')" disabled><span class="abtn-icon">⚔</span>Declare War<br><span style="font-size:7px;color:rgba(255,107,107,.3)">Phase 4</span></button>'
-      +'<button class="pmod-action-btn" onclick="toast(\'Spy — Phase 4\')" disabled><span class="abtn-icon">🕵</span>Send Spy<br><span style="font-size:7px;color:rgba(200,185,140,.3)">Phase 4</span></button>';
+    html+='<button class="pmod-action-btn" disabled><span class="abtn-icon">⚔</span>Recruit Army<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">⚒</span>Build<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🛡</span>Fortify<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🚢</span>Trade Route<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>';
+  } else {
+    html+='<button class="pmod-action-btn" disabled><span class="abtn-icon">💬</span>Send Envoy<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🤝</span>Trade<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 3</span></button>'
+      +'<button class="pmod-action-btn dng" disabled><span class="abtn-icon">⚔</span>Declare War<br><span style="font-size:6.5px;color:rgba(255,107,107,.25)">Phase 4</span></button>'
+      +'<button class="pmod-action-btn" disabled><span class="abtn-icon">🕵</span>Send Spy<br><span style="font-size:6.5px;color:rgba(200,185,140,.25)">Phase 4</span></button>';
   }
-
   html+='</div>';
   el.innerHTML=html;
 }
 
-window.closeProvModal=function(){
-  document.getElementById('provModal').classList.remove('open');
-};
 
 // ── GOV MODAL ──────────────────────────────────────────────
 window.openGovModal=function(){
