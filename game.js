@@ -421,6 +421,16 @@ function draw(){
     ctx.drawImage(mapImg, panX*dpr+t*imgW, dy, sw, sh);
   }
 
+  // Ocean overlay — draw blue tint over water areas
+  if(oceanCanvas){
+    ctx.save();
+    ctx.globalCompositeOperation='source-over';
+    for(let t=startT;t<=endT;t++){
+      ctx.drawImage(oceanCanvas, panX*dpr+t*imgW, dy, sw, sh);
+    }
+    ctx.restore();
+  }
+
   const cellW=sw/100, cellH=sh/60;
 
   // Province overlays — repeated per tile
@@ -504,6 +514,55 @@ window.addEventListener('resize',resize);
 mapImg.addEventListener('load',resize);
 if(mapImg.complete&&mapImg.naturalWidth)resize();
 else mapImg.onload=resize;
+
+// ── OCEAN MASK ────────────────────────────────────────────
+// Samples map image to detect ocean pixels (dark areas)
+// Built once after image loads, then used as overlay in draw()
+let oceanMask=null; // ImageData or offscreen canvas
+let oceanCanvas=null, oceanCtx=null;
+
+function buildOceanMask(){
+  if(oceanMask) return;
+  if(!mapImg.complete||!mapImg.naturalWidth) return;
+
+  // Sample at reduced resolution for performance
+  const SAMPLE_W=500, SAMPLE_H=304;
+  const tmp=document.createElement('canvas');
+  tmp.width=SAMPLE_W; tmp.height=SAMPLE_H;
+  const tc=tmp.getContext('2d');
+  tc.drawImage(mapImg,0,0,SAMPLE_W,SAMPLE_H);
+  const imgData=tc.getImageData(0,0,SAMPLE_W,SAMPLE_H);
+  const px=imgData.data;
+
+  // Build offscreen ocean mask canvas (same resolution)
+  oceanCanvas=document.createElement('canvas');
+  oceanCanvas.width=SAMPLE_W; oceanCanvas.height=SAMPLE_H;
+  oceanCtx=oceanCanvas.getContext('2d');
+  const maskData=oceanCtx.createImageData(SAMPLE_W,SAMPLE_H);
+  const mp=maskData.data;
+
+  // FPE_Map ocean color: dark purple ~(56, 46, 68)
+  // Land: light beige ~(220+, 215+, 210+)
+  for(let i=0;i<px.length;i+=4){
+    const r=px[i],g=px[i+1],b=px[i+2];
+    // Ocean: dark and slightly purple/blue-ish
+    const isDark=r<100&&g<90&&b<110;
+    const isLand=r>160&&g>155&&b>145;
+    if(isDark&&!isLand){
+      // Blue ocean tint
+      mp[i]=30; mp[i+1]=80; mp[i+2]=180; mp[i+3]=55;
+    } else {
+      mp[i]=0; mp[i+1]=0; mp[i+2]=0; mp[i+3]=0;
+    }
+  }
+  oceanCtx.putImageData(maskData,0,0);
+  oceanMask=true;
+  draw();
+}
+
+// Build mask after image loads
+if(mapImg.complete&&mapImg.naturalWidth) buildOceanMask();
+else mapImg.addEventListener('load',buildOceanMask);
 
 // ── AUTH ───────────────────────────────────────────────────
 function clockTick(){const n=new Date();const e=document.getElementById('ac');if(e)e.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
