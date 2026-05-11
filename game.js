@@ -402,6 +402,10 @@ function showTip(cx,cy,mx,my){
 // ── DRAW ────────────────────────────────────────────────────
 function hexRgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 
+// Ocean mask — declared here so draw() can reference them safely
+let oceanMask=null;
+let oceanCanvas=null, oceanCtx=null;
+
 function draw(){
   const W=canvas.width,H=canvas.height,dpr=devicePixelRatio;
   ctx.clearRect(0,0,W,H);
@@ -515,11 +519,7 @@ mapImg.addEventListener('load',resize);
 if(mapImg.complete&&mapImg.naturalWidth)resize();
 else mapImg.onload=resize;
 
-// ── OCEAN MASK ────────────────────────────────────────────
-// Samples map image to detect ocean pixels (dark areas)
-// Built once after image loads, then used as overlay in draw()
-let oceanMask=null; // ImageData or offscreen canvas
-let oceanCanvas=null, oceanCtx=null;
+// ── OCEAN MASK ─────────────────────────────────────────
 
 function buildOceanMask(){
   if(oceanMask) return;
@@ -619,7 +619,6 @@ async function afterLogin(){
   cp=prof;
   document.getElementById('auth').style.display='none';
   document.getElementById('tbPl').textContent=prof?.username||cu.email;
-  document.getElementById('lP').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   // Owner check
   // Owner = admin flag from community profiles
   // Owner check: is_admin must be TRUE in profiles table
