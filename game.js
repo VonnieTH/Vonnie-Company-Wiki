@@ -1203,7 +1203,9 @@ function refreshSb(){
   const el=document.getElementById('sbProvList');
   if(!el) return;
   const mine=Object.entries(ownership).filter(([_,n])=>n===mn.id).map(([pid])=>byId[pid]).filter(Boolean);
-  el.innerHTML=mine.map(p=>{
+
+  // Land provinces
+  const landHtml=mine.map(p=>{
     const act=selProv?.id===p.id?' active':'';
     const coastTag=p.terrain==='coast'?' ⚓':'';
     return '<div class="sb-pi'+act+'" style="display:flex;align-items:center;justify-content:space-between;padding-right:4px">'
@@ -1212,6 +1214,21 @@ function refreshSb(){
       +'<button onclick="openProvModal('+p.id+')" style="background:none;border:1px solid rgba(180,160,100,.2);color:rgba(180,160,100,.4);font-size:9px;padding:2px 5px;cursor:pointer;font-family:var(--mono);flex-shrink:0" title="Province Details">\u229e</button>'
       +'</div>';
   }).join('');
+
+  // Sea provinces section (always shown, not ownable)
+  const seas=getAllSeaProvs();
+  const seaDivider='<div style="font-size:6.5px;color:rgba(90,180,255,.3);letter-spacing:.18em;padding:4px 10px 3px;background:rgba(90,180,255,.04);border-top:1px solid rgba(90,180,255,.12);border-bottom:.5px solid rgba(90,180,255,.08);margin-top:4px">SEA PROVINCES</div>';
+  const seaHtml=seas.map(p=>{
+    const act=selProv?.id===p.id?' active':'';
+    return '<div class="sb-pi'+act+'" style="display:flex;align-items:center;justify-content:space-between;padding-right:4px;border-left:2px solid rgba(90,180,255,.2);">'
+      +'<div onclick="openProvModal('+p.id+')" style="flex:1;cursor:pointer;padding:4px 0 4px 10px">'
+      +'<span style="color:#5ab4ff">\uD83C\uDF0A '+p.name+'</span>'
+      +'<br><span class="sb-pi-sub" style="color:rgba(90,180,255,.4)">Sea \u00b7 \uD83D\uDCB0+'+p.gold+' \u2699+'+p.supply+'</span></div>'
+      +'<button onclick="openProvModal('+p.id+')" style="background:none;border:1px solid rgba(90,180,255,.2);color:rgba(90,180,255,.4);font-size:9px;padding:2px 5px;cursor:pointer;font-family:var(--mono);flex-shrink:0" title="Sea Province Details">\u229e</button>'
+      +'</div>';
+  }).join('');
+
+  el.innerHTML=landHtml+seaDivider+seaHtml;
 }
 
 // ── SHOW PANEL — decides which sidebar state to show ─────
