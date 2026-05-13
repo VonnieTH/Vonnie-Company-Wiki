@@ -384,6 +384,58 @@ html,body{height:100%;overflow:hidden;background:#05050a;color:#c8e8ff;font-fami
 .pmod-action-btn .abtn-icon{font-size:13px;}
 
 
+/* ══ SEA PROVINCE MODAL ══════════════════════════════════ */
+#seaModal{position:fixed;left:214px;bottom:0;z-index:700;display:none;pointer-events:none;}
+#seaModal.open{display:block;pointer-events:all;}
+.sea-modal-box{width:320px;background:#08101c;border:1px solid rgba(90,180,255,.3);border-bottom:none;box-shadow:4px -4px 32px rgba(0,0,0,.9);font-family:var(--mono);display:flex;flex-direction:column;max-height:70vh;}
+/* Banner */
+.sea-modal-banner{position:relative;height:80px;flex-shrink:0;overflow:hidden;background:linear-gradient(180deg,#0a1a30 0%,#0d2545 40%,#1a3a60 100%);}
+.sea-banner-overlay{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(30,80,160,.08) 3px,rgba(30,80,160,.08) 4px);}
+.sea-banner-content{position:relative;z-index:2;padding:10px 12px;display:flex;flex-direction:column;gap:2px;}
+.sea-banner-icon{font-size:18px;line-height:1;}
+.sea-banner-name{font-size:14px;color:#7ec8ff;letter-spacing:.05em;font-weight:bold;text-shadow:0 0 12px rgba(90,180,255,.5);}
+.sea-banner-yields{font-size:8px;color:rgba(90,180,255,.5);letter-spacing:.05em;margin-top:2px;}
+.sea-modal-close{position:absolute;top:6px;right:8px;z-index:3;background:none;border:none;color:rgba(90,180,255,.4);font-size:12px;cursor:pointer;font-family:var(--mono);padding:2px 5px;}
+.sea-modal-close:hover{color:#ff6b6b;}
+/* Fleet slots */
+.sea-fleet-row-wrap{display:flex;align-items:center;gap:0;border-bottom:1px solid rgba(90,180,255,.12);flex-shrink:0;}
+.sea-fleet-slots{display:flex;flex:1;gap:0;}
+.sea-fleet-slot{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-right:1px solid rgba(90,180,255,.08);}
+.sea-fleet-icon{font-size:18px;}
+.sea-fleet-count{font-size:14px;color:#5ab4ff;margin-top:2px;}
+.sea-fleet-label{font-size:6.5px;color:rgba(90,180,255,.35);letter-spacing:.08em;margin-top:1px;}
+.sea-power-badge{padding:7px 12px;text-align:center;border-left:1px solid rgba(90,180,255,.12);flex-shrink:0;}
+.sea-power-val{font-size:18px;color:#5ab4ff;}
+.sea-power-lbl{font-size:6px;color:rgba(90,180,255,.35);letter-spacing:.1em;margin-top:1px;}
+.sea-upkeep-val{font-size:8px;color:rgba(240,192,64,.5);margin-top:2px;}
+/* Stat bars */
+.sea-stats-wrap{padding:8px 12px;border-bottom:1px solid rgba(90,180,255,.1);flex-shrink:0;}
+.sea-stat-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+.sea-stat-row:last-child{margin-bottom:0;}
+.sea-stat-lbl{font-size:6.5px;color:rgba(90,180,255,.35);letter-spacing:.1em;width:58px;flex-shrink:0;}
+.sea-stat-bar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.sea-stat-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+.sea-stat-val{font-size:8px;width:30px;text-align:right;flex-shrink:0;}
+/* Bottom scrollable */
+.sea-bottom{overflow-y:auto;flex:1;max-height:calc(70vh - 230px);}
+.sea-bottom::-webkit-scrollbar{width:2px;}
+.sea-bottom::-webkit-scrollbar-thumb{background:rgba(90,180,255,.2);}
+/* Adjacency */
+.sea-adj-wrap{padding:8px 12px;border-bottom:1px solid rgba(90,180,255,.08);}
+.sea-adj-hdr{font-size:6.5px;color:rgba(90,180,255,.3);letter-spacing:.16em;margin-bottom:4px;}
+.sea-adj-item{font-size:8px;padding:3px 0;cursor:pointer;transition:color .12s;}
+.sea-adj-item.sea{color:rgba(90,180,255,.55);}
+.sea-adj-item.sea:hover{color:#5ab4ff;}
+.sea-adj-item.coast{color:rgba(200,185,140,.45);}
+.sea-adj-item.coast:hover{color:#dcc87c;}
+.sea-adj-item.uncl{color:rgba(200,185,140,.25);}
+/* Actions */
+.sea-actions{padding:8px 12px 10px;}
+.sea-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+.sea-act-btn{font-family:var(--mono);font-size:7.5px;letter-spacing:.05em;padding:6px 6px;border:1px solid rgba(90,180,255,.18);background:transparent;color:rgba(90,180,255,.4);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s;}
+.sea-act-btn:disabled{opacity:.3;cursor:not-allowed;}
+.sea-act-btn:hover:not(:disabled){background:rgba(90,180,255,.1);border-color:#5ab4ff;color:#5ab4ff;}
+
 #govModal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;overflow-y:auto;}
 #govModal.open{display:flex;}
 .gmbox{width:440px;max-width:95vw;background:#0d0d1a;border:1px solid rgba(240,192,64,.4);max-height:88vh;display:flex;flex-direction:column;}

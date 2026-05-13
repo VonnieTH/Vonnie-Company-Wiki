@@ -350,7 +350,47 @@
 <div id="toast"></div>
 <div id="pieTooltip"></div>
 
-<!-- PROVINCE DETAIL MODAL -->
+<!-- SEA PROVINCE MODAL -->
+<div id="seaModal">
+  <div class="sea-modal-box">
+    <!-- Ocean background banner -->
+    <div class="sea-modal-banner">
+      <div class="sea-banner-overlay"></div>
+      <div class="sea-banner-content">
+        <div class="sea-banner-icon">🌊</div>
+        <div class="sea-banner-name" id="seaModalName">—</div>
+        <div class="sea-banner-yields" id="seaYields"></div>
+      </div>
+      <button class="sea-modal-close" onclick="closeSeaModal()">✕</button>
+    </div>
+    <!-- Fleet slots row (like HoI4) -->
+    <div class="sea-fleet-row-wrap">
+      <div id="seaFleetSlots" class="sea-fleet-slots"></div>
+      <div class="sea-power-badge">
+        <div class="sea-power-val" id="seaNavPower">0</div>
+        <div class="sea-power-lbl">NAVAL POWER</div>
+        <div class="sea-upkeep-val">-<span id="seaNavUpkeep">0</span>/tick</div>
+      </div>
+    </div>
+    <!-- Stat bars -->
+    <div class="sea-stats-wrap" id="seaStatBars"></div>
+    <!-- Scrollable bottom -->
+    <div class="sea-bottom">
+      <!-- Adjacency -->
+      <div class="sea-adj-wrap" id="seaAdjacency"></div>
+      <!-- Actions -->
+      <div class="sea-actions">
+        <div class="sea-adj-hdr" style="margin-bottom:5px">NAVAL ACTIONS</div>
+        <div class="sea-action-grid">
+          <button class="sea-act-btn" onclick="toast('Naval Patrol — Phase 4')" disabled><span>🚢</span>Patrol</button>
+          <button class="sea-act-btn" onclick="toast('Blockade — Phase 4')" disabled><span>🚫</span>Blockade</button>
+          <button class="sea-act-btn" onclick="toast('Trade Route — Phase 3')" disabled><span>🤝</span>Trade</button>
+          <button class="sea-act-btn" onclick="toast('Naval Battle — Phase 4')" disabled><span>⚔</span>Battle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="provModal">
   <div class="pmod-box">
     <!-- Thin title bar with terrain color accent -->
