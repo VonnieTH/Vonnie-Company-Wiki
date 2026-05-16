@@ -1456,7 +1456,7 @@ function renderNavalTab(){
   if(!el||!mn) return;
   const n=getNaval();
   const coasts=getCoastProvs();
-  const seas=getAllSeaProvs();
+
   const power=navalPower();
   const upkeep=navalUpkeep();
 
@@ -1504,15 +1504,7 @@ function renderNavalTab(){
     ? coasts.map(p=>'<div style="font-size:8px;color:rgba(90,180,255,.5);padding:2px 0">\u2693 '+p.name+'</div>').join('')
     : '';
 
-  // Sea provinces list
-  const seaList='<div style="font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.1em;margin:8px 0 3px">SEA PROVINCES ('+seas.length+')</div>'
-    +seas.map(p=>{
-      return '<div onclick="openProvModal('+p.id+')" style="display:flex;align-items:center;gap:7px;font-size:8px;color:rgba(90,180,255,.55);padding:4px 8px;border-bottom:.5px solid rgba(90,180,255,.07);cursor:pointer;" title="'+p.name+'">'
-        +'<span style="font-size:13px">\u{1F30A}</span>'
-        +'<span style="flex:1">'+p.name+'</span>'
-        +'<span style="font-size:7px;color:rgba(90,180,255,.35)">\u{1F4B0}+'+p.gold+' \u2699+'+p.supply+'</span>'
-        +'</div>';
-    }).join('');
+  const seaList=""; // Sea provinces accessible via map click
 
   el.innerHTML='<div class="naval-panel">'
     +'<div class="naval-hdr">\u2693 NAVAL COMMAND</div>'
@@ -1522,7 +1514,6 @@ function renderNavalTab(){
     +fleetHtml
     +buildHtml
     +(portsHtml?'<div style="font-size:7px;color:rgba(90,180,255,.3);letter-spacing:.1em;margin:8px 0 3px">PORTS</div>'+portsHtml:'')
-    +seaList
     +'</div></div>';
 }
 
