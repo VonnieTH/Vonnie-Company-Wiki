@@ -1588,6 +1588,56 @@ function getSeaAdjacentSeas(seaId){
   return adj.seas.map(id=>byId[id]).filter(Boolean);
 }
 
+// ── SEA WAVE ANIMATION ──────────────────────────────────────
+let _seaWaveAnim=null;
+function startSeaWave(){
+  const canvas=document.getElementById('seaWaveCanvas');
+  if(!canvas)return;
+  canvas.width=330;canvas.height=96;
+  const ctx=canvas.getContext('2d');
+  let t=0;
+  function frame(){
+    ctx.clearRect(0,0,330,96);
+    const grad=ctx.createLinearGradient(0,0,0,96);
+    grad.addColorStop(0,'#060f1e');
+    grad.addColorStop(1,'#071828');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,330,96);
+    const waves=[
+      {amp:7,freq:.022,speed:.018,y:60,col:'rgba(30,90,180,.22)'},
+      {amp:5,freq:.034,speed:.025,y:68,col:'rgba(50,130,220,.18)'},
+      {amp:4,freq:.018,speed:.012,y:52,col:'rgba(20,70,160,.16)'},
+      {amp:3,freq:.048,speed:.03, y:75,col:'rgba(80,160,255,.12)'},
+    ];
+    waves.forEach(w=>{
+      ctx.beginPath();
+      ctx.moveTo(0,96);
+      for(let x=0;x<=330;x+=2){
+        const y=w.y+Math.sin(x*w.freq+t*w.speed*60)*w.amp;
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(330,96);ctx.closePath();
+      ctx.fillStyle=w.col;ctx.fill();
+    });
+    for(let i=0;i<3;i++){
+      const sx=((t*40+i*120)%330);
+      const sy=45+Math.sin(t*0.8+i)*10;
+      const rg=ctx.createRadialGradient(sx,sy,0,sx,sy,35);
+      rg.addColorStop(0,'rgba(140,210,255,.07)');
+      rg.addColorStop(1,'transparent');
+      ctx.fillStyle=rg;
+      ctx.fillRect(0,0,330,96);
+    }
+    t++;
+    _seaWaveAnim=requestAnimationFrame(frame);
+  }
+  if(_seaWaveAnim)cancelAnimationFrame(_seaWaveAnim);
+  frame();
+}
+function stopSeaWave(){
+  if(_seaWaveAnim){cancelAnimationFrame(_seaWaveAnim);_seaWaveAnim=null;}
+}
+
 // ── SEA PROVINCE MODAL ─────────────────────────────────────
 window.openSeaModal=function(pid){
   const p=byId[pid];
@@ -1606,21 +1656,30 @@ window.openSeaModal=function(pid){
   document.getElementById('seaNavPower').textContent=power;
   document.getElementById('seaNavUpkeep').textContent=upkeep;
 
+  // Power ring arc
+  const arc=document.getElementById('seaPowerArc');
+  if(arc){
+    const pct=Math.min(1,power/30);
+    arc.style.strokeDashoffset=(150.8*(1-pct)).toFixed(1);
+    arc.style.stroke=power>15?'#40ff80':power>5?'#5ab4ff':'rgba(90,180,255,.3)';
+  }
+
+  // Fleet total
+  const totalShips=Object.values(n).reduce((s,v)=>s+(typeof v==='number'?v:0),0);
+  const ftEl=document.getElementById('seaFleetTotal');
+  if(ftEl) ftEl.textContent=totalShips?totalShips+' ships total':'No fleet';
+
   // Fleet composition
   const fleetDefs=[
-    {key:'patrol_boats',icon:'🚤',label:'Patrol'},
-    {key:'frigates',icon:'⛵',label:'Frigate'},
-    {key:'galleons',icon:'🚢',label:'Galleon'},
+    {key:'patrol_boats',icon:'🚤',label:'PATROL'},
+    {key:'frigates',   icon:'⛵',label:'FRIGATE'},
+    {key:'galleons',   icon:'🚢',label:'GALLEON'},
   ];
   const fleetEl=document.getElementById('seaFleetSlots');
   if(fleetEl){
     fleetEl.innerHTML=fleetDefs.map(({key,icon,label})=>{
       const cnt=n[key]||0;
-      return '<div class="sea-fleet-slot">'
-        +'<div class="sea-fleet-icon">'+icon+'</div>'
-        +'<div class="sea-fleet-count">'+cnt+'</div>'
-        +'<div class="sea-fleet-label">'+label+'</div>'
-        +'</div>';
+      return '<div class="sea-fleet-slot'+(cnt?' has-ships':'')+'">'        +'<div class="sea-fleet-icon">'+icon+'</div>'        +'<div class="sea-fleet-count" style="color:'+(cnt?'#7ec8ff':'rgba(90,180,255,.2)')+'">'+cnt+'</div>'        +'<div class="sea-fleet-label">'+label+'</div>'        +'</div>';
     }).join('');
   }
 
@@ -1628,17 +1687,17 @@ window.openSeaModal=function(pid){
   const statEl=document.getElementById('seaStatBars');
   if(statEl){
     const stats=[
-      {label:'CONTROL',val:mn?(Math.min(100,power*5)):0,col:'#5ab4ff'},
-      {label:'TRADE',val:mn?30:0,col:'#40ff80'},
-      {label:'BLOCKADE',val:0,col:'#ff6b6b'},
-      {label:'SAFETY',val:mn?(Math.min(100,power*3+50)):50,col:'#f0c040'},
+      {label:'CONTROL', val:mn?(Math.min(100,power*5)):0,   col:'#5ab4ff'},
+      {label:'TRADE',   val:mn?Math.min(100,p.gold*6):0,    col:'#40ff80'},
+      {label:'BLOCKADE',val:0,                               col:'#ff6b6b'},
+      {label:'SAFETY',  val:mn?(Math.min(100,power*3+50)):40,col:'#f0c040'},
     ];
-    statEl.innerHTML=stats.map(s=>'<div class="sea-stat-row">'
-      +'<span class="sea-stat-lbl">'+s.label+'</span>'
-      +'<div class="sea-stat-bar"><div class="sea-stat-fill" style="width:'+s.val+'%;background:'+s.col+'"></div></div>'
-      +'<span class="sea-stat-val" style="color:'+s.col+'">'+s.val+'%</span>'
-      +'</div>').join('');
+    statEl.innerHTML=stats.map(s=>'<div class="sea-stat-row">'      +'<span class="sea-stat-lbl">'+s.label+'</span>'      +'<div class="sea-stat-bar"><div class="sea-stat-fill" style="width:'+s.val+'%;background:'+s.col+';color:'+s.col+'"></div></div>'      +'<span class="sea-stat-val" style="color:'+s.col+'">'+s.val+'%</span>'      +'</div>').join('');
   }
+
+  // Yields
+  const yEl=document.getElementById('seaYields');
+  if(yEl) yEl.textContent='💰 +'+p.gold+' · ⚙ +'+p.supply+' per tick';
 
   // Adjacency
   const adjSeas=getSeaAdjacentSeas(pid);
@@ -1647,37 +1706,55 @@ window.openSeaModal=function(pid){
   if(adjEl){
     let html='';
     if(adjSeas.length){
-      html+='<div class="sea-adj-hdr">⚓ ADJACENT SEAS</div>';
+      html+='<div class="sea-adj-hdr">🌊 ADJACENT SEAS</div>';
       html+=adjSeas.map(s=>'<div class="sea-adj-item sea" onclick="openSeaModal('+s.id+')">🌊 '+s.name+'</div>').join('');
     }
     const adjCoastOwned=adjCoasts.filter(c=>ownership[c.id]);
     if(adjCoastOwned.length){
-      html+='<div class="sea-adj-hdr" style="margin-top:5px">🏝 COASTAL ACCESS</div>';
+      html+='<div class="sea-adj-hdr" style="margin-top:6px">🏝 COASTAL ACCESS</div>';
       html+=adjCoastOwned.map(c=>{
         const own=nations[ownership[c.id]];
         return '<div class="sea-adj-item coast" onclick="openProvModal('+c.id+')">'
-          +'⚓ '+c.name+(own?' <span style="color:rgba(200,185,140,.4);font-size:7px">('+own.name+')</span>':'')
+          +'⚓ '+c.name+(own?' <span style="color:rgba(200,185,140,.35);font-size:7px">('+own.name+')</span>':'')
           +'</div>';
       }).join('');
     }
-    if(adjCoasts.filter(c=>!ownership[c.id]).length){
-      html+='<div class="sea-adj-hdr" style="margin-top:5px">🏖 UNCLAIMED COASTS</div>';
-      html+=adjCoasts.filter(c=>!ownership[c.id]).map(c=>'<div class="sea-adj-item coast uncl" onclick="openProvModal('+c.id+')">⚓ '+c.name+'</div>').join('');
+    const uncl=adjCoasts.filter(c=>!ownership[c.id]);
+    if(uncl.length){
+      html+='<div class="sea-adj-hdr" style="margin-top:6px">🏖 UNCLAIMED COASTS</div>';
+      html+=uncl.map(c=>'<div class="sea-adj-item coast uncl" onclick="openProvModal('+c.id+')">⚓ '+c.name+'</div>').join('');
     }
-    if(!html) html='<div style="color:rgba(90,180,255,.25);font-size:8px;padding:4px 0">No known adjacent waters</div>';
+    if(!html) html='<div style="color:rgba(90,180,255,.2);font-size:8px;padding:4px 0">No known adjacent waters</div>';
     adjEl.innerHTML=html;
   }
 
-  // Yields
-  const yEl=document.getElementById('seaYields');
-  if(yEl) yEl.textContent='💰 +'+p.gold+' · ⚙ +'+p.supply+' per tick';
+  // Nations with coastline on this sea
+  const npEl=document.getElementById('seaNationsPresent');
+  if(npEl){
+    const natSet=new Set(adjCoasts.map(c=>ownership[c.id]).filter(Boolean));
+    if(natSet.size){
+      let html='<div class="sea-section-hdr" style="display:block;padding:8px 12px 4px">NATIONS WITH COASTLINE</div>';
+      [...natSet].forEach(nid=>{
+        const nat=nations[nid];if(!nat)return;
+        const col=nat.color||'#888';
+        html+='<div class="sea-nat-row">'
+          +(nat.flag_url?'<img class="sea-nat-flag" src="'+nat.flag_url+'" alt="">':'<div style="width:20px;height:14px;background:'+col+';opacity:.4;border:1px solid '+col+'50"></div>')
+          +'<div class="sea-nat-name" style="color:'+col+'">'+nat.name+'</div>'
+          +'<div class="sea-nat-ships" style="color:'+col+'80">'+nat.gov+'</div>'
+          +'</div>';
+      });
+      npEl.innerHTML=html;
+    } else npEl.innerHTML='';
+  }
 
   modal.classList.add('open');
+  startSeaWave();
 };
 
 window.closeSeaModal=function(){
   const m=document.getElementById('seaModal');
   if(m) m.classList.remove('open');
+  stopSeaWave();
 };
 
 

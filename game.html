@@ -146,21 +146,21 @@
 
       <!-- Leader block -->
       <div class="sb-leader-block">
-        <div class="sb-leader-frame" id="sbLeaderFrame">👤</div>
+        <div class="sb-leader-frame" id="sbLeaderFrame"></div>
         <div class="sb-leader-info">
           <div class="sb-nation-name" id="sbPolName">—</div>
           <div class="sb-gov-line" id="sbPolGov"></div>
           <div class="sb-ruler-line" id="sbRulerName"></div>
           <div class="sb-leader-btns">
-            <button class="sb-lbtn" onclick="openGovModal()">⚖ REFORM</button>
-            <button class="sb-lbtn sb-lbtn-cyan" onclick="openPolModal()">📜 POLITICS</button>
+            <button class="sb-lbtn" onclick="openGovModal()">REFORM</button>
+            <button class="sb-lbtn sb-lbtn-cyan" onclick="openPolModal()">POLITICS</button>
           </div>
         </div>
       </div>
 
       <!-- National Focus -->
       <div class="sb-focus-row">
-        <div class="sb-focus-icon">❓</div>
+        <div class="sb-focus-icon">?</div>
         <div class="sb-focus-body">
           <div class="sb-focus-title">NATIONAL FOCUS</div>
           <button class="sb-focus-btn" onclick="toast('National Focus — Phase 3')">[ SELECT A NATIONAL FOCUS ]</button>
@@ -253,7 +253,7 @@
       <div class="sb-diplo-leader-block">
         <div class="sb-diplo-portrait-wrap" id="sbDiploPortraitWrap">
           <img id="sbDiploPortrait" src="" alt="" style="display:none">
-          <div id="sbDiploPortraitPh">👤</div>
+          <div id="sbDiploPortraitPh"></div>
         </div>
         <div class="sb-diplo-info">
           <div class="sb-diplo-name" id="sbDiploName">—</div>
@@ -353,41 +353,69 @@
 <!-- SEA PROVINCE MODAL -->
 <div id="seaModal">
   <div class="sea-modal-box">
-    <!-- Ocean background banner -->
+
+    <!-- ── CINEMATIC BANNER ── -->
     <div class="sea-modal-banner">
-      <div class="sea-banner-overlay"></div>
-      <div class="sea-banner-content">
-        <div class="sea-banner-icon">🌊</div>
-        <div class="sea-banner-name" id="seaModalName">—</div>
-        <div class="sea-banner-yields" id="seaYields"></div>
+      <canvas class="sea-wave-canvas" id="seaWaveCanvas"></canvas>
+      <div class="sea-banner-inner">
+        <div class="sea-banner-left">
+          <div class="sea-province-badge">SEA PROVINCE</div>
+          <div class="sea-banner-name" id="seaModalName">—</div>
+          <div class="sea-banner-yields" id="seaYields"></div>
+        </div>
+        <div class="sea-banner-right">
+          <div class="sea-power-ring" id="seaPowerRing">
+            <svg viewBox="0 0 60 60" width="60" height="60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(90,180,255,.12)" stroke-width="4"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#5ab4ff" stroke-width="4"
+                stroke-dasharray="150.8" id="seaPowerArc"
+                stroke-dashoffset="150.8"
+                stroke-linecap="round"
+                transform="rotate(-90 30 30)"/>
+            </svg>
+            <div class="sea-power-inner">
+              <div class="sea-power-num" id="seaNavPower">0</div>
+              <div class="sea-power-sub">PWR</div>
+            </div>
+          </div>
+          <div class="sea-upkeep-line">-<span id="seaNavUpkeep">0</span> ⚙/tick</div>
+        </div>
       </div>
       <button class="sea-modal-close" onclick="closeSeaModal()">✕</button>
     </div>
-    <!-- Fleet slots row (like HoI4) -->
-    <div class="sea-fleet-row-wrap">
-      <div id="seaFleetSlots" class="sea-fleet-slots"></div>
-      <div class="sea-power-badge">
-        <div class="sea-power-val" id="seaNavPower">0</div>
-        <div class="sea-power-lbl">NAVAL POWER</div>
-        <div class="sea-upkeep-val">-<span id="seaNavUpkeep">0</span>/tick</div>
+
+    <!-- ── FLEET STRIP ── -->
+    <div class="sea-fleet-strip">
+      <div class="sea-fleet-label-row">
+        <span class="sea-section-hdr">⚓ YOUR FLEET</span>
+        <span class="sea-fleet-total" id="seaFleetTotal"></span>
       </div>
+      <div id="seaFleetSlots" class="sea-fleet-slots"></div>
     </div>
-    <!-- Stat bars -->
+
+    <!-- ── STAT BARS ── -->
     <div class="sea-stats-wrap" id="seaStatBars"></div>
-    <!-- Scrollable bottom -->
+
+    <!-- ── SCROLLABLE BOTTOM ── -->
     <div class="sea-bottom">
+
       <!-- Adjacency -->
       <div class="sea-adj-wrap" id="seaAdjacency"></div>
+
+      <!-- Nations present -->
+      <div id="seaNationsPresent" class="sea-nations-wrap"></div>
+
       <!-- Actions -->
       <div class="sea-actions">
-        <div class="sea-adj-hdr" style="margin-bottom:5px">NAVAL ACTIONS</div>
+        <div class="sea-section-hdr" style="margin-bottom:6px;padding:0 12px">NAVAL ACTIONS</div>
         <div class="sea-action-grid">
-          <button class="sea-act-btn" onclick="toast('Naval Patrol — Phase 4')" disabled><span>🚢</span>Patrol</button>
-          <button class="sea-act-btn" onclick="toast('Blockade — Phase 4')" disabled><span>🚫</span>Blockade</button>
-          <button class="sea-act-btn" onclick="toast('Trade Route — Phase 3')" disabled><span>🤝</span>Trade</button>
-          <button class="sea-act-btn" onclick="toast('Naval Battle — Phase 4')" disabled><span>⚔</span>Battle</button>
+          <button class="sea-act-btn" onclick="toast('Naval Patrol — Phase 4')" disabled><span class="sab-ico">🚢</span><span>Patrol</span><span class="sab-phase">Phase 4</span></button>
+          <button class="sea-act-btn" onclick="toast('Blockade — Phase 4')" disabled><span class="sab-ico">🚫</span><span>Blockade</span><span class="sab-phase">Phase 4</span></button>
+          <button class="sea-act-btn" onclick="toast('Trade Route — Phase 3')" disabled><span class="sab-ico">🤝</span><span>Trade</span><span class="sab-phase">Phase 3</span></button>
+          <button class="sea-act-btn" onclick="toast('Naval Battle — Phase 4')" disabled><span class="sab-ico">⚔</span><span>Battle</span><span class="sab-phase">Phase 4</span></button>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -495,7 +523,7 @@
 <div id="polModal">
   <div class="pol-box">
     <div class="pol-bar">
-      <span>📜 POLITICAL CABINET</span>
+      <span>POLITICAL CABINET</span>
       <button onclick="closePolModal()" style="background:none;border:none;color:rgba(240,192,64,.5);cursor:pointer;font-family:inherit;font-size:10px">[ X ]</button>
     </div>
     <div class="pol-tabs">
